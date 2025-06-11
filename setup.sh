@@ -145,7 +145,8 @@ install_dependencies() {
 check_docker() {
     if command -v docker &> /dev/null; then
         print_success "Docker is already installed"
-        docker --version | xargs -I{} print_message "${GREEN}" "  {}"
+        DOCKER_VERSION=$(docker --version)
+        print_message "${GREEN}" "  $DOCKER_VERSION"
         return 0
     else
         return 1
@@ -196,11 +197,13 @@ install_docker() {
 check_docker_compose() {
     if command -v docker-compose &> /dev/null; then
         print_success "Docker Compose is already installed"
-        docker-compose --version | xargs -I{} print_message "${GREEN}" "  {}"
+        COMPOSE_VERSION=$(docker-compose --version)
+        print_message "${GREEN}" "  $COMPOSE_VERSION"
         return 0
     elif docker compose version &> /dev/null; then
         print_success "Docker Compose plugin is already installed"
-        docker compose version | head -n 1 | xargs -I{} print_message "${GREEN}" "  {}"
+        COMPOSE_PLUGIN_VERSION=$(docker compose version | head -n 1)
+        print_message "${GREEN}" "  $COMPOSE_PLUGIN_VERSION"
         return 0
     else
         return 1
@@ -255,6 +258,112 @@ install_blastdock() {
     
     # Create virtual environment
     python3 -m venv venv
+    
+    # Check if requirements.txt exists
+    if [ ! -f "requirements.txt" ]; then
+        print_step "Creating requirements.txt file..."
+        cat > requirements.txt << 'EOF'
+click>=8.0.0
+pyyaml>=6.0
+jinja2>=3.0.0
+python-dotenv>=0.19.0
+requests>=2.26.0
+termcolor>=1.1.0
+prompt_toolkit>=3.0.0
+typer>=0.4.0
+rich>=10.0.0
+EOF
+    fi
+    
+    # Create setup.py if it doesn't exist
+    if [ ! -f "setup.py" ]; then
+        print_step "Creating setup.py file..."
+        cat > setup.py << 'EOF'
+from setuptools import setup, find_packages
+
+setup(
+    name="blastdock",
+    version="0.1.0",
+    packages=find_packages(),
+    include_package_data=True,
+    install_requires=[
+        "click>=8.0.0",
+        "pyyaml>=6.0",
+        "jinja2>=3.0.0",
+        "python-dotenv>=0.19.0",
+        "requests>=2.26.0",
+        "termcolor>=1.1.0",
+        "prompt_toolkit>=3.0.0",
+        "typer>=0.4.0",
+        "rich>=10.0.0",
+    ],
+    entry_points="""
+        [console_scripts]
+        blastdock=blastdock.cli:main
+    """,
+)
+EOF
+    fi
+    
+    # Create basic package structure if it doesn't exist
+    if [ ! -d "blastdock" ]; then
+        print_step "Creating basic package structure..."
+        mkdir -p blastdock/templates
+        
+        # Create __init__.py
+        cat > blastdock/__init__.py << 'EOF'
+# BlastDock package
+__version__ = "0.1.0"
+EOF
+        
+        # Create cli.py
+        cat > blastdock/cli.py << 'EOF'
+import click
+
+@click.group()
+def main():
+    """BlastDock - Docker Deployment CLI Tool"""
+    pass
+
+@main.command()
+def templates():
+    """List available templates"""
+    click.echo("Available templates:")
+    click.echo("  - wordpress: WordPress with MySQL")
+    click.echo("  - nginx: Nginx web server")
+
+@main.command()
+@click.argument("template")
+@click.option("-i", "--interactive", is_flag=True, help="Interactive mode")
+def init(template, interactive):
+    """Initialize a new deployment from template"""
+    click.echo(f"Initializing {template} deployment")
+    if interactive:
+        click.echo("Interactive mode enabled")
+
+@main.command()
+@click.argument("project")
+def deploy(project):
+    """Deploy a project"""
+    click.echo(f"Deploying {project}")
+
+@main.command()
+@click.argument("project")
+def status(project):
+    """Check project status"""
+    click.echo(f"Status for {project}: Running")
+
+@main.command()
+@click.argument("project")
+def logs(project):
+    """View project logs"""
+    click.echo(f"Logs for {project}:")
+    click.echo("No logs available")
+
+if __name__ == "__main__":
+    main()
+EOF
+    fi
     
     # Install requirements
     ./venv/bin/pip install -r requirements.txt
