@@ -1,4 +1,7 @@
-# Docker Deployment CLI Tool
+# BlastDock - Docker Deployment CLI Tool
+
+[![Website](https://img.shields.io/badge/Website-blastdock.com-blue)](https://blastdock.com)
+[![GitHub](https://img.shields.io/badge/GitHub-BlastDock%2Fblastdock-black)](https://github.com/BlastDock/blastdock)
 
 A Python-based CLI tool that simplifies Docker application deployment using pre-built templates. The tool handles template customization, Docker Compose generation, deployment, and basic monitoring.
 
@@ -21,7 +24,7 @@ A Python-based CLI tool that simplifies Docker application deployment using pre-
 ### Install from source
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/BlastDock/blastdock.git
 cd blastdock
 pip install -r requirements.txt
 pip install -e .
@@ -241,5 +244,7 @@ MIT License
 
 For issues and questions:
 - Check the troubleshooting section
-- Review existing issues
+- Visit our website: [blastdock.com](https://blastdock.com)
+- Review existing issues on [GitHub](https://github.com/BlastDock/blastdock/issues)
 - Create a new issue with details
+- Join our community forum at [community.blastdock.com](https://community.blastdock.com)
