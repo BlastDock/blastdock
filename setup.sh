@@ -319,6 +319,13 @@ EOF
         # Create cli.py
         cat > blastdock/cli.py << 'EOF'
 import click
+import os
+import json
+from rich.console import Console
+from rich.table import Table
+from rich import box
+
+console = Console()
 
 @click.group()
 def main():
@@ -359,6 +366,111 @@ def logs(project):
     """View project logs"""
     click.echo(f"Logs for {project}:")
     click.echo("No logs available")
+
+@main.command()
+def list():
+    """List all initialized projects"""
+    deploys_dir = os.path.join(os.getcwd(), "deploys")
+    
+    if not os.path.exists(deploys_dir):
+        click.echo("No projects found. Initialize a project with 'blastdock init <template>'")
+        return
+    
+    projects = [d for d in os.listdir(deploys_dir) if os.path.isdir(os.path.join(deploys_dir, d))]
+    
+    if not projects:
+        click.echo("No projects found. Initialize a project with 'blastdock init <template>'")
+        return
+    
+    table = Table(title="BlastDock Projects", box=box.ROUNDED)
+    table.add_column("Project Name", style="cyan")
+    table.add_column("Template", style="green")
+    table.add_column("Status", style="yellow")
+    
+    for project in projects:
+        config_file = os.path.join(deploys_dir, project, ".blastdock.json")
+        template = "Unknown"
+        status = "Not deployed"
+        
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    template = config.get("template", "Unknown")
+                    status = "Deployed" if os.path.exists(os.path.join(deploys_dir, project, ".deployed")) else "Not deployed"
+            except:
+                pass
+        
+        table.add_row(project, template, status)
+    
+    console.print(table)
+
+@main.command()
+@click.argument("project")
+def config(project):
+    """Show project configuration"""
+    deploys_dir = os.path.join(os.getcwd(), "deploys")
+    project_dir = os.path.join(deploys_dir, project)
+    
+    if not os.path.exists(project_dir):
+        click.echo(f"Project '{project}' not found. Initialize it with 'blastdock init <template>'")
+        return
+    
+    config_file = os.path.join(project_dir, ".blastdock.json")
+    env_file = os.path.join(project_dir, ".env")
+    
+    console.print(f"[bold cyan]Configuration for project:[/] [bold green]{project}[/]\n")
+    
+    # Display project metadata
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                
+                table = Table(title="Project Metadata", box=box.ROUNDED)
+                table.add_column("Property", style="cyan")
+                table.add_column("Value", style="green")
+                
+                for key, value in config.items():
+                    if isinstance(value, dict) or isinstance(value, list):
+                        value = json.dumps(value, indent=2)
+                    table.add_row(key, str(value))
+                
+                console.print(table)
+        except Exception as e:
+            console.print(f"[bold red]Error reading config file:[/] {str(e)}")
+    else:
+        console.print("[yellow]No .blastdock.json configuration file found[/]")
+    
+    # Display environment variables
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, 'r') as f:
+                env_vars = {}
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        env_vars[key] = value
+                
+                if env_vars:
+                    table = Table(title="Environment Variables", box=box.ROUNDED)
+                    table.add_column("Variable", style="cyan")
+                    table.add_column("Value", style="green")
+                    
+                    for key, value in env_vars.items():
+                        # Mask passwords and sensitive information
+                        if any(sensitive in key.lower() for sensitive in ['password', 'secret', 'key', 'token']):
+                            value = "*****"
+                        table.add_row(key, value)
+                    
+                    console.print(table)
+                else:
+                    console.print("[yellow]No environment variables found[/]")
+        except Exception as e:
+            console.print(f"[bold red]Error reading .env file:[/] {str(e)}")
+    else:
+        console.print("[yellow]No .env file found[/]")
 
 if __name__ == "__main__":
     main()

@@ -72,6 +72,7 @@ blastdock logs mywordpress
 - `blastdock stop <project>` - Stop deployment
 - `blastdock remove <project>` - Remove deployment
 - `blastdock list` - List all deployments
+- `blastdock config <project>` - Show project configuration details
 
 ### Monitoring
 - `blastdock status <project>` - Check deployment status

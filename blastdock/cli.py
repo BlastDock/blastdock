@@ -200,5 +200,131 @@ def templates():
     except Exception as e:
         console.print(f"[red]Error: {str(e)}[/red]")
 
+@cli.command()
+@click.argument('project_name')
+def config(project_name):
+    """Show project configuration details"""
+    try:
+        deployment_manager = DeploymentManager()
+        
+        if not deployment_manager.project_exists(project_name):
+            console.print(f"[red]Project '{project_name}' not found![/red]")
+            return
+        
+        project_dir = os.path.join(get_deploys_dir(), project_name)
+        config_file = os.path.join(project_dir, ".blastdock.json")
+        env_file = os.path.join(project_dir, ".env")
+        
+        console.print(f"[bold cyan]Configuration for project:[/bold cyan] [bold green]{project_name}[/bold green]\n")
+        
+        # Display project metadata
+        if os.path.exists(config_file):
+            try:
+                import json
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    
+                    table = Table(title="Project Metadata")
+                    table.add_column("Property", style="cyan")
+                    table.add_column("Value", style="green")
+                    
+                    for key, value in config.items():
+                        # Handle dict and list values safely
+                        try:
+                            if type(value) in (dict, list):
+                                value = json.dumps(value, indent=2)
+                        except:
+                            pass
+                        table.add_row(str(key), str(value))
+                    
+                    console.print(table)
+            except Exception as e:
+                console.print(f"[bold red]Error reading config file:[/bold red] {str(e)}")
+        else:
+            console.print("[yellow]No .blastdock.json configuration file found[/yellow]")
+        
+        # Display environment variables
+        if os.path.exists(env_file):
+            try:
+                with open(env_file, 'r') as f:
+                    env_vars = {}
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#') and '=' in line:
+                            key, value = line.split('=', 1)
+                            env_vars[key] = value
+                    
+                    if env_vars:
+                        table = Table(title="Environment Variables")
+                        table.add_column("Variable", style="cyan")
+                        table.add_column("Value", style="green")
+                        
+                        for key, value in env_vars.items():
+                            # Mask passwords and sensitive information
+                            if any(sensitive in key.lower() for sensitive in ['password', 'secret', 'key', 'token']):
+                                value = "*****"
+                            table.add_row(str(key), str(value))
+                        
+                        console.print(table)
+                    else:
+                        console.print("[yellow]No environment variables found[/yellow]")
+            except Exception as e:
+                console.print(f"[bold red]Error reading .env file:[/bold red] {str(e)}")
+        else:
+            console.print("[yellow]No .env file found[/yellow]")
+            
+        # Display docker-compose.yml information
+        compose_file = os.path.join(project_dir, "docker-compose.yml")
+        if os.path.exists(compose_file):
+            try:
+                import yaml
+                with open(compose_file, 'r') as f:
+                    compose_data = yaml.safe_load(f)
+                
+                if compose_data and 'services' in compose_data:
+                    services = compose_data['services']
+                    
+                    table = Table(title="Services Configuration")
+                    table.add_column("Service", style="cyan")
+                    table.add_column("Image", style="blue")
+                    table.add_column("Ports", style="magenta")
+                    table.add_column("Volumes", style="yellow")
+                    
+                    for service_name, service_config in services.items():
+                        image = service_config.get('image', 'N/A')
+                        
+                        # Handle ports safely
+                        ports = service_config.get('ports', [])
+                        try:
+                            if type(ports) == list:
+                                ports_str = '\n'.join(str(p) for p in ports) if ports else 'N/A'
+                            else:
+                                ports_str = str(ports)
+                        except:
+                            ports_str = 'Error parsing ports'
+                        
+                        # Handle volumes safely
+                        volumes = service_config.get('volumes', [])
+                        try:
+                            if type(volumes) == list:
+                                volumes_str = '\n'.join(str(v) for v in volumes) if volumes else 'N/A'
+                            else:
+                                volumes_str = str(volumes)
+                        except:
+                            volumes_str = 'Error parsing volumes'
+                        
+                        table.add_row(str(service_name), str(image), ports_str, volumes_str)
+                    
+                    console.print(table)
+            except Exception as e:
+                console.print(f"[bold red]Error reading docker-compose.yml:[/bold red] {str(e)}")
+        else:
+            console.print("[yellow]No docker-compose.yml file found[/yellow]")
+        
+    except Exception as e:
+        console.print(f"[red]Error: {str(e)}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+
 if __name__ == '__main__':
     cli()
