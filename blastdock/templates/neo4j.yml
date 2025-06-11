@@ -1,0 +1,62 @@
+template_info:
+  description: "Neo4j - Graph database platform"
+  version: "1.0"
+  services:
+    - neo4j
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "7474"
+    required: true
+  
+  bolt_port:
+    type: port
+    description: "Bolt port"
+    default: "7687"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    neo4j:
+      image: neo4j:latest
+      container_name: "{{ project_name }}_neo4j"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:7474"
+        - "{{ bolt_port }}:7687"
+      environment:
+        - NEO4J_AUTH=neo4j/{{ admin_password }}
+        - NEO4J_dbms_memory_pagecache_size=1G
+        - NEO4J_dbms.memory.heap.initial_size=1G
+        - NEO4J_dbms_memory_heap_max__size=1G
+      volumes:
+        - neo4j_data:/data
+        - neo4j_logs:/logs
+        - neo4j_import:/var/lib/neo4j/import
+        - neo4j_plugins:/plugins
+      networks:
+        - neo4j_network
+  
+  volumes:
+    neo4j_data:
+      driver: local
+    neo4j_logs:
+      driver: local
+    neo4j_import:
+      driver: local
+    neo4j_plugins:
+      driver: local
+  
+  networks:
+    neo4j_network:
+      driver: bridge

@@ -1,0 +1,100 @@
+template_info:
+  description: "Flarum - Simple forum software for building great communities"
+  version: "1.0"
+  services:
+    - flarum
+    - mysql
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  mysql_password:
+    type: password
+    description: "MySQL password"
+    default: "auto"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  site_title:
+    type: string
+    description: "Site title"
+    default: "Flarum Forum"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mysql:
+      image: mysql:8
+      container_name: "{{ project_name }}_mysql"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ mysql_password }}
+        - MYSQL_DATABASE=flarum
+        - MYSQL_USER=flarum
+        - MYSQL_PASSWORD={{ mysql_password }}
+      volumes:
+        - mysql_data:/var/lib/mysql
+      networks:
+        - flarum_network
+    
+    flarum:
+      image: mondedie/flarum:latest
+      container_name: "{{ project_name }}_flarum"
+      restart: unless-stopped
+      depends_on:
+        - mysql
+      ports:
+        - "{{ port }}:8888"
+      environment:
+        - FLARUM_DB_HOST=mysql
+        - FLARUM_DB_USER=flarum
+        - FLARUM_DB_PASS={{ mysql_password }}
+        - FLARUM_DB_NAME=flarum
+        - FLARUM_TITLE={{ site_title }}
+        - FLARUM_ADMIN_USER={{ admin_username }}
+        - FLARUM_ADMIN_PASS={{ admin_password }}
+        - FLARUM_ADMIN_MAIL={{ admin_email }}
+        - FLARUM_URL=http://localhost:{{ port }}
+      volumes:
+        - flarum_assets:/flarum/app/public/assets
+        - flarum_extensions:/flarum/app/extensions
+        - flarum_storage:/flarum/app/storage
+      networks:
+        - flarum_network
+  
+  volumes:
+    mysql_data:
+      driver: local
+    flarum_assets:
+      driver: local
+    flarum_extensions:
+      driver: local
+    flarum_storage:
+      driver: local
+  
+  networks:
+    flarum_network:
+      driver: bridge

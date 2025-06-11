@@ -1,0 +1,59 @@
+template_info:
+  description: "PostgreSQL database server"
+  version: "1.0"
+  services:
+    - postgresql
+
+fields:
+  postgres_port:
+    type: port
+    description: "PostgreSQL port"
+    default: "5432"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  postgres_user:
+    type: string
+    description: "PostgreSQL user"
+    default: "postgres"
+    required: true
+  
+  postgres_db:
+    type: database_name
+    description: "Initial database name"
+    default: "postgres"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgresql:
+      image: postgres:15
+      container_name: "{{ project_name }}_postgresql"
+      restart: unless-stopped
+      ports:
+        - "{{ postgres_port }}:5432"
+      environment:
+        POSTGRES_USER: "{{ postgres_user }}"
+        POSTGRES_PASSWORD: "{{ postgres_password }}"
+        POSTGRES_DB: "{{ postgres_db }}"
+        PGDATA: /var/lib/postgresql/data/pgdata
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+        - ./logs/postgresql:/var/log/postgresql
+      networks:
+        - postgres_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    postgres_network:
+      driver: bridge

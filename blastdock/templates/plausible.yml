@@ -1,0 +1,135 @@
+template_info:
+  description: "Plausible - Privacy-friendly analytics"
+  version: "1.0"
+  services:
+    - plausible
+    - postgresql
+    - clickhouse
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8000"
+    required: true
+  
+  admin_email:
+    type: email
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  secret_key_base:
+    type: password
+    description: "Secret key base"
+    default: "auto"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Site domain"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    plausible:
+      image: plausible/analytics:latest
+      container_name: "{{ project_name }}_plausible"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8000"
+      environment:
+        - ADMIN_USER_EMAIL={{ admin_email }}
+        - ADMIN_USER_NAME=admin
+        - ADMIN_USER_PWD={{ admin_password }}
+        - BASE_URL=http://{{ domain }}:{{ http_port }}
+        - SECRET_KEY_BASE={{ secret_key_base }}
+        - DATABASE_URL=postgres://postgres:{{ postgres_password }}@postgresql:5432/plausible
+        - CLICKHOUSE_DATABASE_URL=http://clickhouse:8123/plausible
+      depends_on:
+        - postgresql
+        - clickhouse
+      networks:
+        - plausible_network
+    
+    postgresql:
+      image: postgres:14-alpine
+      container_name: "{{ project_name }}_postgresql"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_DB=plausible
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - plausible_network
+    
+    clickhouse:
+      image: clickhouse/clickhouse-server:22.6-alpine
+      container_name: "{{ project_name }}_clickhouse"
+      restart: unless-stopped
+      volumes:
+        - clickhouse_data:/var/lib/clickhouse
+        - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+      networks:
+        - plausible_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    clickhouse_data:
+      driver: local
+  
+  networks:
+    plausible_network:
+      driver: bridge
+
+config_files:
+  - path: config/clickhouse/users.xml
+    content: |
+      <yandex>
+          <profiles>
+              <default>
+                  <max_memory_usage>10000000000</max_memory_usage>
+                  <max_bytes_before_external_group_by>5000000000</max_bytes_before_external_group_by>
+                  <max_bytes_before_external_sort>5000000000</max_bytes_before_external_sort>
+              </default>
+          </profiles>
+          <users>
+              <default>
+                  <password></password>
+                  <networks>
+                      <ip>::/0</ip>
+                  </networks>
+                  <profile>default</profile>
+                  <quota>default</quota>
+              </default>
+          </users>
+          <quotas>
+              <default>
+                  <interval>
+                      <duration>3600</duration>
+                      <queries>0</queries>
+                      <errors>0</errors>
+                      <result_rows>0</result_rows>
+                      <read_rows>0</read_rows>
+                      <execution_time>0</execution_time>
+                  </interval>
+              </default>
+          </quotas>
+      </yandex>

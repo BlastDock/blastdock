@@ -1,0 +1,56 @@
+template_info:
+  description: "Syncthing - Continuous file synchronization program"
+  version: "1.0"
+  services:
+    - syncthing
+
+fields:
+  web_port:
+    type: port
+    description: "Web interface port"
+    default: "8384"
+    required: true
+  
+  listen_port:
+    type: port
+    description: "Listen port"
+    default: "22000"
+    required: true
+  
+  discovery_port:
+    type: port
+    description: "Discovery port"
+    default: "21027"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    syncthing:
+      image: linuxserver/syncthing:latest
+      container_name: "{{ project_name }}_syncthing"
+      restart: unless-stopped
+      ports:
+        - "{{ web_port }}:8384"
+        - "{{ listen_port }}:22000/tcp"
+        - "{{ discovery_port }}:21027/udp"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/London
+      volumes:
+        - syncthing_config:/config
+        - syncthing_data:/data
+      networks:
+        - syncthing_network
+  
+  volumes:
+    syncthing_config:
+      driver: local
+    syncthing_data:
+      driver: local
+  
+  networks:
+    syncthing_network:
+      driver: bridge

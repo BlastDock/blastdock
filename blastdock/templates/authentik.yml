@@ -1,0 +1,106 @@
+template_info:
+  description: "Authentik - Open Source Identity Provider"
+  version: "1.0"
+  services:
+    - authentik-server
+    - authentik-worker
+    - postgres
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "9000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret_key:
+    type: password
+    description: "Secret key"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=authentik
+        - POSTGRES_DB=authentik
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - authentik_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - authentik_network
+    
+    authentik-server:
+      image: ghcr.io/goauthentik/server:latest
+      container_name: "{{ project_name }}_authentik_server"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:9000"
+      environment:
+        - AUTHENTIK_REDIS__HOST=redis
+        - AUTHENTIK_POSTGRESQL__HOST=postgres
+        - AUTHENTIK_POSTGRESQL__USER=authentik
+        - AUTHENTIK_POSTGRESQL__NAME=authentik
+        - AUTHENTIK_POSTGRESQL__PASSWORD={{ db_password }}
+        - AUTHENTIK_SECRET_KEY={{ secret_key }}
+      volumes:
+        - authentik_media:/media
+        - authentik_custom_templates:/templates
+      networks:
+        - authentik_network
+    
+    authentik-worker:
+      image: ghcr.io/goauthentik/server:latest
+      container_name: "{{ project_name }}_authentik_worker"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      environment:
+        - AUTHENTIK_REDIS__HOST=redis
+        - AUTHENTIK_POSTGRESQL__HOST=postgres
+        - AUTHENTIK_POSTGRESQL__USER=authentik
+        - AUTHENTIK_POSTGRESQL__NAME=authentik
+        - AUTHENTIK_POSTGRESQL__PASSWORD={{ db_password }}
+        - AUTHENTIK_SECRET_KEY={{ secret_key }}
+      command: worker
+      volumes:
+        - authentik_media:/media
+        - authentik_custom_templates:/templates
+      networks:
+        - authentik_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    authentik_media:
+      driver: local
+    authentik_custom_templates:
+      driver: local
+  
+  networks:
+    authentik_network:
+      driver: bridge

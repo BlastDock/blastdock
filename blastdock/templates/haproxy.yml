@@ -1,0 +1,67 @@
+template_info:
+  description: "HAProxy - Reliable, high performance TCP/HTTP load balancer"
+  version: "1.0"
+  services:
+    - haproxy
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  stats_port:
+    type: port
+    description: "Stats page port"
+    default: "8404"
+    required: true
+  
+  stats_username:
+    type: string
+    description: "Stats username"
+    default: "admin"
+    required: true
+  
+  stats_password:
+    type: password
+    description: "Stats password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    haproxy:
+      image: haproxy:latest
+      container_name: "{{ project_name }}_haproxy"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+        - "{{ stats_port }}:8404"
+      environment:
+        - STATS_USERNAME={{ stats_username }}
+        - STATS_PASSWORD={{ stats_password }}
+      volumes:
+        - haproxy_config:/usr/local/etc/haproxy
+        - haproxy_certs:/certs
+      networks:
+        - haproxy_network
+  
+  volumes:
+    haproxy_config:
+      driver: local
+    haproxy_certs:
+      driver: local
+  
+  networks:
+    haproxy_network:
+      driver: bridge

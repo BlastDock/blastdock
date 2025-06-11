@@ -1,0 +1,75 @@
+template_info:
+  description: "Lychee - Self-hosted photo-management system"
+  version: "1.0"
+  services:
+    - lychee
+    - mysql
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  mysql_password:
+    type: password
+    description: "MySQL password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mysql:
+      image: mysql:8
+      container_name: "{{ project_name }}_mysql"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ mysql_password }}
+        - MYSQL_DATABASE=lychee
+        - MYSQL_USER=lychee
+        - MYSQL_PASSWORD={{ mysql_password }}
+      volumes:
+        - mysql_data:/var/lib/mysql
+      networks:
+        - lychee_network
+    
+    lychee:
+      image: lycheeorg/lychee:latest
+      container_name: "{{ project_name }}_lychee"
+      restart: unless-stopped
+      depends_on:
+        - mysql
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - DB_CONNECTION=mysql
+        - DB_HOST=mysql
+        - DB_PORT=3306
+        - DB_DATABASE=lychee
+        - DB_USERNAME=lychee
+        - DB_PASSWORD={{ mysql_password }}
+        - PUID=1000
+        - PGID=1000
+      volumes:
+        - lychee_uploads:/uploads
+        - lychee_sym:/sym
+        - lychee_config:/config
+      networks:
+        - lychee_network
+  
+  volumes:
+    mysql_data:
+      driver: local
+    lychee_uploads:
+      driver: local
+    lychee_sym:
+      driver: local
+    lychee_config:
+      driver: local
+  
+  networks:
+    lychee_network:
+      driver: bridge

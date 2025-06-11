@@ -1,0 +1,90 @@
+template_info:
+  description: "Traefik - Modern reverse proxy and load balancer"
+  version: "1.0"
+  services:
+    - traefik
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  dashboard_port:
+    type: port
+    description: "Dashboard port"
+    default: "8080"
+    required: true
+  
+  dashboard_username:
+    type: string
+    description: "Dashboard username"
+    default: "admin"
+    required: true
+  
+  dashboard_password:
+    type: password
+    description: "Dashboard password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    traefik:
+      image: traefik:v2.9
+      container_name: "{{ project_name }}_traefik"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+        - "{{ dashboard_port }}:8080"
+      volumes:
+        - ./config/traefik:/etc/traefik
+        - /var/run/docker.sock:/var/run/docker.sock:ro
+      networks:
+        - traefik_network
+      command:
+        - --api.dashboard=true
+        - --api.insecure=false
+        - --providers.docker=true
+        - --providers.docker.exposedbydefault=false
+        - --providers.file.directory=/etc/traefik
+        - --entrypoints.web.address=:80
+        - --entrypoints.websecure.address=:443
+        - --certificatesresolvers.myresolver.acme.httpchallenge=true
+        - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
+        - --certificatesresolvers.myresolver.acme.email=admin@example.com
+        - --certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json
+  
+  networks:
+    traefik_network:
+      driver: bridge
+
+config_files:
+  - path: config/traefik/traefik.yml
+    content: |
+      http:
+        middlewares:
+          auth:
+            basicAuth:
+              users:
+                - "{{ dashboard_username }}:{{ dashboard_password|htpasswd }}"
+        
+        routers:
+          dashboard:
+            rule: Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+            service: api@internal
+            middlewares:
+              - auth
+  
+  - path: config/traefik/acme.json
+    content: ""

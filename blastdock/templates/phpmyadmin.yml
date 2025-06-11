@@ -1,0 +1,45 @@
+template_info:
+  description: "phpMyAdmin - MySQL/MariaDB administration tool"
+  version: "1.0"
+  services:
+    - phpmyadmin
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_host:
+    type: string
+    description: "Database host"
+    default: "mysql"
+    required: true
+  
+  db_port:
+    type: string
+    description: "Database port"
+    default: "3306"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    phpmyadmin:
+      image: phpmyadmin:latest
+      container_name: "{{ project_name }}_phpmyadmin"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - PMA_HOST={{ db_host }}
+        - PMA_PORT={{ db_port }}
+        - PMA_ARBITRARY=1
+      networks:
+        - phpmyadmin_network
+  
+  networks:
+    phpmyadmin_network:
+      driver: bridge

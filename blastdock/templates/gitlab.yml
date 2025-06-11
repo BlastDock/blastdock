@@ -1,0 +1,71 @@
+template_info:
+  description: "GitLab - DevOps lifecycle tool"
+  version: "1.0"
+  services:
+    - gitlab
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  ssh_port:
+    type: port
+    description: "SSH port"
+    default: "22"
+    required: true
+  
+  root_password:
+    type: password
+    description: "Root password"
+    default: "auto"
+    required: true
+  
+  hostname:
+    type: domain
+    description: "External URL (domain/IP)"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    gitlab:
+      image: gitlab/gitlab-ce:latest
+      container_name: "{{ project_name }}_gitlab"
+      restart: unless-stopped
+      hostname: "{{ hostname }}"
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+        - "{{ ssh_port }}:22"
+      environment:
+        - GITLAB_OMNIBUS_CONFIG=external_url 'http://{{ hostname }}'; gitlab_rails['initial_root_password']='{{ root_password }}'; gitlab_rails['gitlab_shell_ssh_port']={{ ssh_port }}
+      volumes:
+        - gitlab_config:/etc/gitlab
+        - gitlab_logs:/var/log/gitlab
+        - gitlab_data:/var/opt/gitlab
+      shm_size: '256m'
+      networks:
+        - gitlab_network
+  
+  volumes:
+    gitlab_config:
+      driver: local
+    gitlab_logs:
+      driver: local
+    gitlab_data:
+      driver: local
+  
+  networks:
+    gitlab_network:
+      driver: bridge

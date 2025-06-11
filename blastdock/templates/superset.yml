@@ -1,0 +1,99 @@
+template_info:
+  description: "Apache Superset - Data visualization and exploration platform"
+  version: "1.0"
+  services:
+    - superset
+    - redis
+    - db
+
+fields:
+  web_port:
+    type: port
+    description: "Web interface port"
+    default: "8088"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    redis:
+      image: redis:latest
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      volumes:
+        - redis_data:/data
+      networks:
+        - superset_network
+    
+    db:
+      image: postgres:13
+      container_name: "{{ project_name }}_db"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=superset
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=superset
+      volumes:
+        - db_data:/var/lib/postgresql/data
+      networks:
+        - superset_network
+    
+    superset:
+      image: apache/superset:latest
+      container_name: "{{ project_name }}_superset"
+      restart: unless-stopped
+      depends_on:
+        - db
+        - redis
+      ports:
+        - "{{ web_port }}:8088"
+      environment:
+        - SUPERSET_SECRET_KEY=your_secret_key_here
+        - ADMIN_USERNAME={{ admin_username }}
+        - ADMIN_FIRST_NAME=Admin
+        - ADMIN_LAST_NAME=User
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_PASSWORD={{ admin_password }}
+        - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://superset:{{ db_password }}@db:5432/superset
+        - REDIS_HOST=redis
+      volumes:
+        - superset_home:/app/superset_home
+      networks:
+        - superset_network
+  
+  volumes:
+    redis_data:
+      driver: local
+    db_data:
+      driver: local
+    superset_home:
+      driver: local
+  
+  networks:
+    superset_network:
+      driver: bridge

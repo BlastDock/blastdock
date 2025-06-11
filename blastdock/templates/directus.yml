@@ -1,0 +1,94 @@
+template_info:
+  description: "Directus - Headless CMS and API"
+  version: "1.0"
+  services:
+    - directus
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8055"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  key:
+    type: password
+    description: "Secret key"
+    default: "auto"
+    required: true
+  
+  secret:
+    type: password
+    description: "Secret token"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=directus
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=directus
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - directus_network
+    
+    directus:
+      image: directus/directus:latest
+      container_name: "{{ project_name }}_directus"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8055"
+      depends_on:
+        - postgres
+      environment:
+        - KEY={{ key }}
+        - SECRET={{ secret }}
+        - DB_CLIENT=pg
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_DATABASE=directus
+        - DB_USER=directus
+        - DB_PASSWORD={{ db_password }}
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - directus_uploads:/directus/uploads
+      networks:
+        - directus_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    directus_uploads:
+      driver: local
+  
+  networks:
+    directus_network:
+      driver: bridge

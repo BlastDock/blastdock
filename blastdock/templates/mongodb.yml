@@ -1,0 +1,79 @@
+template_info:
+  description: "MongoDB - NoSQL document database"
+  version: "1.0"
+  services:
+    - mongodb
+    - mongo-express
+
+fields:
+  mongodb_port:
+    type: port
+    description: "MongoDB port"
+    default: "27017"
+    required: true
+  
+  express_port:
+    type: port
+    description: "Mongo Express port"
+    default: "8081"
+    required: true
+  
+  root_username:
+    type: string
+    description: "Root username"
+    default: "admin"
+    required: true
+  
+  root_password:
+    type: password
+    description: "Root password"
+    default: "auto"
+    required: true
+  
+  database:
+    type: string
+    description: "Initial database"
+    default: "mydatabase"
+    required: false
+
+compose:
+  version: '3.8'
+  
+  services:
+    mongodb:
+      image: mongo:latest
+      container_name: "{{ project_name }}_mongodb"
+      restart: unless-stopped
+      ports:
+        - "{{ mongodb_port }}:27017"
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: "{{ root_username }}"
+        MONGO_INITDB_ROOT_PASSWORD: "{{ root_password }}"
+        MONGO_INITDB_DATABASE: "{{ database }}"
+      volumes:
+        - mongodb_data:/data/db
+      networks:
+        - mongodb_network
+    
+    mongo-express:
+      image: mongo-express:latest
+      container_name: "{{ project_name }}_mongo-express"
+      restart: unless-stopped
+      ports:
+        - "{{ express_port }}:8081"
+      environment:
+        ME_CONFIG_MONGODB_ADMINUSERNAME: "{{ root_username }}"
+        ME_CONFIG_MONGODB_ADMINPASSWORD: "{{ root_password }}"
+        ME_CONFIG_MONGODB_URL: "mongodb://{{ root_username }}:{{ root_password }}@mongodb:27017/"
+      depends_on:
+        - mongodb
+      networks:
+        - mongodb_network
+  
+  volumes:
+    mongodb_data:
+      driver: local
+  
+  networks:
+    mongodb_network:
+      driver: bridge

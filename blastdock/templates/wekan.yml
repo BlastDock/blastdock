@@ -1,0 +1,79 @@
+template_info:
+  description: "Wekan - Open source kanban board"
+  version: "1.0"
+  services:
+    - wekan
+    - mongodb
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  root_url:
+    type: string
+    description: "Root URL"
+    default: "http://localhost:8080"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mongodb:
+      image: mongo:5
+      container_name: "{{ project_name }}_mongodb"
+      restart: unless-stopped
+      command: mongod --logpath=/dev/null
+      volumes:
+        - mongodb_data:/data/db
+      networks:
+        - wekan_network
+    
+    wekan:
+      image: wekanteam/wekan:latest
+      container_name: "{{ project_name }}_wekan"
+      restart: unless-stopped
+      depends_on:
+        - mongodb
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - MONGO_URL=mongodb://mongodb:27017/wekan
+        - ROOT_URL={{ root_url }}
+        - WITH_API=true
+        - MAIL_URL=smtp://user:pass@mailserver.example.com:25/
+        - MAIL_FROM=wekan-admin@example.com
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_USERNAME={{ admin_username }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      networks:
+        - wekan_network
+  
+  volumes:
+    mongodb_data:
+      driver: local
+  
+  networks:
+    wekan_network:
+      driver: bridge

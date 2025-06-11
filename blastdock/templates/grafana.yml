@@ -1,0 +1,82 @@
+template_info:
+  description: "Grafana - Analytics & monitoring platform"
+  version: "1.0"
+  services:
+    - grafana
+    - prometheus
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "3000"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  prometheus_port:
+    type: port
+    description: "Prometheus port"
+    default: "9090"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    grafana:
+      image: grafana/grafana:latest
+      container_name: "{{ project_name }}_grafana"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:3000"
+      environment:
+        - GF_SECURITY_ADMIN_PASSWORD={{ admin_password }}
+        - GF_USERS_ALLOW_SIGN_UP=false
+      volumes:
+        - grafana_data:/var/lib/grafana
+      networks:
+        - monitoring_network
+    
+    prometheus:
+      image: prom/prometheus:latest
+      container_name: "{{ project_name }}_prometheus"
+      restart: unless-stopped
+      ports:
+        - "{{ prometheus_port }}:9090"
+      volumes:
+        - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        - prometheus_data:/prometheus
+      command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.path=/prometheus'
+        - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+        - '--web.console.templates=/usr/share/prometheus/consoles'
+      networks:
+        - monitoring_network
+  
+  volumes:
+    grafana_data:
+      driver: local
+    prometheus_data:
+      driver: local
+  
+  networks:
+    monitoring_network:
+      driver: bridge
+
+config_files:
+  - path: config/prometheus/prometheus.yml
+    content: |
+      global:
+        scrape_interval: 15s
+        evaluation_interval: 15s
+
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+            - targets: ['localhost:9090']

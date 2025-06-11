@@ -1,0 +1,98 @@
+template_info:
+  description: "Pleroma - Lightweight federated social networking server"
+  version: "1.0"
+  services:
+    - pleroma
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "4000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_name:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=pleroma
+        - POSTGRES_DB=pleroma
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - pleroma_network
+    
+    pleroma:
+      image: pleroma/pleroma:latest
+      container_name: "{{ project_name }}_pleroma"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:4000"
+      environment:
+        - DOMAIN={{ domain }}
+        - DB_HOST=postgres
+        - DB_NAME=pleroma
+        - DB_USER=pleroma
+        - DB_PASS={{ db_password }}
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_NAME={{ admin_name }}
+        - ADMIN_PASSWORD={{ admin_password }}
+        - INSTANCE_NAME=Pleroma
+        - INSTANCE_DESCRIPTION=A Pleroma instance
+        - REGISTRATIONS_OPEN=true
+      volumes:
+        - pleroma_uploads:/var/lib/pleroma/uploads
+        - pleroma_static:/var/lib/pleroma/static
+      networks:
+        - pleroma_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    pleroma_uploads:
+      driver: local
+    pleroma_static:
+      driver: local
+  
+  networks:
+    pleroma_network:
+      driver: bridge

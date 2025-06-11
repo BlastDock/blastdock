@@ -1,0 +1,67 @@
+template_info:
+  description: "Apache Flink - Stream processing framework"
+  version: "1.0"
+  services:
+    - jobmanager
+    - taskmanager
+
+fields:
+  jobmanager_port:
+    type: port
+    description: "JobManager web UI port"
+    default: "8081"
+    required: true
+  
+  taskmanager_slots:
+    type: string
+    description: "Number of task slots"
+    default: "2"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    jobmanager:
+      image: flink:latest
+      container_name: "{{ project_name }}_jobmanager"
+      restart: unless-stopped
+      ports:
+        - "{{ jobmanager_port }}:8081"
+      command: jobmanager
+      environment:
+        - JOB_MANAGER_RPC_ADDRESS=jobmanager
+        - |
+          FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.numberOfTaskSlots: {{ taskmanager_slots }}
+      volumes:
+        - flink_data:/opt/flink/data
+      networks:
+        - flink_network
+    
+    taskmanager:
+      image: flink:latest
+      container_name: "{{ project_name }}_taskmanager"
+      restart: unless-stopped
+      depends_on:
+        - jobmanager
+      command: taskmanager
+      environment:
+        - JOB_MANAGER_RPC_ADDRESS=jobmanager
+        - |
+          FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.numberOfTaskSlots: {{ taskmanager_slots }}
+      volumes:
+        - flink_data:/opt/flink/data
+      networks:
+        - flink_network
+  
+  volumes:
+    flink_data:
+      driver: local
+  
+  networks:
+    flink_network:
+      driver: bridge

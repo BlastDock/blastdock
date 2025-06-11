@@ -1,0 +1,35 @@
+template_info:
+  description: "Shaarli - Personal, minimalist, super-fast, database free bookmarking service"
+  version: "1.0"
+  services:
+    - shaarli
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    shaarli:
+      image: shaarli/shaarli:latest
+      container_name: "{{ project_name }}_shaarli"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:80"
+      volumes:
+        - shaarli_data:/var/www/shaarli/data
+      networks:
+        - shaarli_network
+  
+  volumes:
+    shaarli_data:
+      driver: local
+  
+  networks:
+    shaarli_network:
+      driver: bridge

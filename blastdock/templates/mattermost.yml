@@ -1,0 +1,93 @@
+template_info:
+  description: "Mattermost - Open source messaging platform"
+  version: "1.0"
+  services:
+    - mattermost
+    - postgresql
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8065"
+    required: true
+  
+  postgres_user:
+    type: string
+    description: "PostgreSQL username"
+    default: "mmuser"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  postgres_db:
+    type: string
+    description: "PostgreSQL database"
+    default: "mattermost"
+    required: true
+  
+  site_url:
+    type: domain
+    description: "Site URL"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mattermost:
+      image: mattermost/mattermost-team-edition:latest
+      container_name: "{{ project_name }}_mattermost"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8065"
+      environment:
+        - MM_SQLSETTINGS_DRIVERNAME=postgres
+        - MM_SQLSETTINGS_DATASOURCE=postgres://{{ postgres_user }}:{{ postgres_password }}@postgresql:5432/{{ postgres_db }}?sslmode=disable
+        - MM_SERVICESETTINGS_SITEURL=http://{{ site_url }}:{{ http_port }}
+      volumes:
+        - mattermost_data:/mattermost/data
+        - mattermost_logs:/mattermost/logs
+        - mattermost_config:/mattermost/config
+        - mattermost_plugins:/mattermost/plugins
+        - mattermost_client_plugins:/mattermost/client/plugins
+      depends_on:
+        - postgresql
+      networks:
+        - mattermost_network
+    
+    postgresql:
+      image: postgres:13-alpine
+      container_name: "{{ project_name }}_postgresql"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER={{ postgres_user }}
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_DB={{ postgres_db }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - mattermost_network
+  
+  volumes:
+    mattermost_data:
+      driver: local
+    mattermost_logs:
+      driver: local
+    mattermost_config:
+      driver: local
+    mattermost_plugins:
+      driver: local
+    mattermost_client_plugins:
+      driver: local
+    postgres_data:
+      driver: local
+  
+  networks:
+    mattermost_network:
+      driver: bridge

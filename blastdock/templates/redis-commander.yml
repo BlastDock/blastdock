@@ -1,0 +1,43 @@
+template_info:
+  description: "Redis Commander - Web management tool for Redis"
+  version: "1.0"
+  services:
+    - redis-commander
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8081"
+    required: true
+  
+  redis_host:
+    type: string
+    description: "Redis host"
+    default: "redis"
+    required: true
+  
+  redis_port:
+    type: string
+    description: "Redis port"
+    default: "6379"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    redis-commander:
+      image: rediscommander/redis-commander:latest
+      container_name: "{{ project_name }}_redis_commander"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8081"
+      environment:
+        - REDIS_HOSTS=local:{{ redis_host }}:{{ redis_port }}
+      networks:
+        - redis_commander_network
+  
+  networks:
+    redis_commander_network:
+      driver: bridge

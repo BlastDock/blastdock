@@ -1,0 +1,64 @@
+template_info:
+  description: "Hasura - GraphQL API for your data"
+  version: "1.0"
+  services:
+    - hasura
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "GraphQL endpoint port"
+    default: "8080"
+    required: true
+  
+  admin_secret:
+    type: password
+    description: "Admin secret key"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - hasura_network
+    
+    hasura:
+      image: hasura/graphql-engine:latest
+      container_name: "{{ project_name }}_hasura"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8080"
+      depends_on:
+        - postgres
+      environment:
+        - HASURA_GRAPHQL_DATABASE_URL=postgres://postgres:{{ db_password }}@postgres:5432/postgres
+        - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+        - HASURA_GRAPHQL_DEV_MODE=true
+        - HASURA_GRAPHQL_ADMIN_SECRET={{ admin_secret }}
+      networks:
+        - hasura_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    hasura_network:
+      driver: bridge

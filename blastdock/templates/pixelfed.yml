@@ -1,0 +1,109 @@
+template_info:
+  description: "Pixelfed - Federated Image Sharing Platform"
+  version: "1.0"
+  services:
+    - pixelfed
+    - postgres
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  app_key:
+    type: password
+    description: "Application key"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  app_name:
+    type: string
+    description: "Application name"
+    default: "Pixelfed"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=pixelfed
+        - POSTGRES_DB=pixelfed
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - pixelfed_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - pixelfed_network
+    
+    pixelfed:
+      image: pixelfed/pixelfed:latest
+      container_name: "{{ project_name }}_pixelfed"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - APP_NAME={{ app_name }}
+        - APP_ENV=production
+        - APP_KEY={{ app_key }}
+        - APP_DEBUG=false
+        - APP_URL=http://localhost:{{ port }}
+        - DB_CONNECTION=pgsql
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_DATABASE=pixelfed
+        - DB_USERNAME=pixelfed
+        - DB_PASSWORD={{ db_password }}
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - ADMIN_DOMAIN=localhost:{{ port }}
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - pixelfed_storage:/var/www/storage
+      networks:
+        - pixelfed_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    pixelfed_storage:
+      driver: local
+  
+  networks:
+    pixelfed_network:
+      driver: bridge

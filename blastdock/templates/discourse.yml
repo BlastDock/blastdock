@@ -1,0 +1,116 @@
+template_info:
+  description: "Discourse - Modern discussion platform"
+  version: "1.0"
+  services:
+    - discourse
+    - postgres
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  developer_emails:
+    type: string
+    description: "Developer emails (comma separated)"
+    default: "admin@example.com"
+    required: true
+  
+  smtp_address:
+    type: string
+    description: "SMTP address"
+    default: "smtp.example.com"
+    required: true
+  
+  smtp_port:
+    type: port
+    description: "SMTP port"
+    default: "587"
+    required: true
+  
+  smtp_username:
+    type: string
+    description: "SMTP username"
+    default: "user@example.com"
+    required: true
+  
+  smtp_password:
+    type: password
+    description: "SMTP password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=discourse
+        - POSTGRES_DB=discourse
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - discourse_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - discourse_network
+    
+    discourse:
+      image: bitnami/discourse:latest
+      container_name: "{{ project_name }}_discourse"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - POSTGRESQL_HOST=postgres
+        - POSTGRESQL_PORT_NUMBER=5432
+        - POSTGRESQL_USERNAME=discourse
+        - POSTGRESQL_PASSWORD={{ db_password }}
+        - POSTGRESQL_DATABASE=discourse
+        - REDIS_HOST=redis
+        - REDIS_PORT_NUMBER=6379
+        - DISCOURSE_HOST=localhost
+        - DISCOURSE_PORT_NUMBER={{ port }}
+        - DISCOURSE_EXTERNAL_HTTP_PORT_NUMBER={{ port }}
+        - DISCOURSE_EXTERNAL_HTTPS_PORT_NUMBER=443
+        - DISCOURSE_DEVELOPER_EMAILS={{ developer_emails }}
+        - DISCOURSE_SMTP_HOST={{ smtp_address }}
+        - DISCOURSE_SMTP_PORT={{ smtp_port }}
+        - DISCOURSE_SMTP_USER={{ smtp_username }}
+        - DISCOURSE_SMTP_PASSWORD={{ smtp_password }}
+        - DISCOURSE_SMTP_PROTOCOL=tls
+      volumes:
+        - discourse_data:/bitnami/discourse
+      networks:
+        - discourse_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    discourse_data:
+      driver: local
+  
+  networks:
+    discourse_network:
+      driver: bridge

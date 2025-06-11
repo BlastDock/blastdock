@@ -1,0 +1,66 @@
+template_info:
+  description: "Focalboard - Open source project management tool"
+  version: "1.0"
+  services:
+    - focalboard
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=focalboard
+        - POSTGRES_DB=focalboard
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - focalboard_network
+    
+    focalboard:
+      image: mattermost/focalboard:latest
+      container_name: "{{ project_name }}_focalboard"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:8000"
+      environment:
+        - VIRTUAL_HOST=localhost
+        - VIRTUAL_PORT=8000
+        - POSTGRES_USER=focalboard
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=focalboard
+        - POSTGRES_HOST=postgres
+      volumes:
+        - focalboard_data:/data
+      networks:
+        - focalboard_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    focalboard_data:
+      driver: local
+  
+  networks:
+    focalboard_network:
+      driver: bridge

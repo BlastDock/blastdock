@@ -1,0 +1,53 @@
+template_info:
+  description: "HashiCorp Consul - Service discovery and configuration"
+  version: "1.0"
+  services:
+    - consul
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP API port"
+    default: "8500"
+    required: true
+  
+  dns_port:
+    type: port
+    description: "DNS port"
+    default: "8600"
+    required: true
+  
+  server_port:
+    type: port
+    description: "Server port"
+    default: "8300"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    consul:
+      image: hashicorp/consul:latest
+      container_name: "{{ project_name }}_consul"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8500"
+        - "{{ dns_port }}:8600/tcp"
+        - "{{ dns_port }}:8600/udp"
+        - "{{ server_port }}:8300"
+      environment:
+        - CONSUL_BIND_INTERFACE=eth0
+      command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+      volumes:
+        - consul_data:/consul/data
+      networks:
+        - consul_network
+  
+  volumes:
+    consul_data:
+      driver: local
+  
+  networks:
+    consul_network:
+      driver: bridge

@@ -1,0 +1,95 @@
+template_info:
+  description: "Nextcloud - Self-hosted productivity platform"
+  version: "1.0"
+  services:
+    - nextcloud
+    - mariadb
+    - redis
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  admin_user:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  db_name:
+    type: string
+    description: "Database name"
+    default: "nextcloud"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    nextcloud:
+      image: nextcloud:latest
+      container_name: "{{ project_name }}_nextcloud"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+      environment:
+        - MYSQL_HOST=mariadb
+        - MYSQL_DATABASE={{ db_name }}
+        - MYSQL_USER=nextcloud
+        - MYSQL_PASSWORD={{ db_password }}
+        - NEXTCLOUD_ADMIN_USER={{ admin_user }}
+        - NEXTCLOUD_ADMIN_PASSWORD={{ admin_password }}
+        - REDIS_HOST=redis
+      volumes:
+        - nextcloud_data:/var/www/html
+      depends_on:
+        - mariadb
+        - redis
+      networks:
+        - nextcloud_network
+    
+    mariadb:
+      image: mariadb:10.5
+      container_name: "{{ project_name }}_mariadb"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ db_password }}
+        - MYSQL_DATABASE={{ db_name }}
+        - MYSQL_USER=nextcloud
+        - MYSQL_PASSWORD={{ db_password }}
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - nextcloud_network
+    
+    redis:
+      image: redis:alpine
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - nextcloud_network
+  
+  volumes:
+    nextcloud_data:
+      driver: local
+    mariadb_data:
+      driver: local
+  
+  networks:
+    nextcloud_network:
+      driver: bridge

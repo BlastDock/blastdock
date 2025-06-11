@@ -1,0 +1,76 @@
+template_info:
+  description: "FreshRSS - Self-hosted RSS feed aggregator"
+  version: "1.0"
+  services:
+    - freshrss
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  base_url:
+    type: string
+    description: "Base URL"
+    default: "http://localhost:8080"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=freshrss
+        - POSTGRES_DB=freshrss
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - freshrss_network
+    
+    freshrss:
+      image: freshrss/freshrss:latest
+      container_name: "{{ project_name }}_freshrss"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - CRON_MIN=*/15
+        - TZ=Europe/Paris
+        - FRESHRSS_DATABASE_HOST=postgres
+        - FRESHRSS_DATABASE_USER=freshrss
+        - FRESHRSS_DATABASE_PASSWORD={{ db_password }}
+        - FRESHRSS_DATABASE_BASE=freshrss
+        - FRESHRSS_BASE_URL={{ base_url }}
+      volumes:
+        - freshrss_data:/var/www/FreshRSS/data
+        - freshrss_extensions:/var/www/FreshRSS/extensions
+      networks:
+        - freshrss_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    freshrss_data:
+      driver: local
+    freshrss_extensions:
+      driver: local
+  
+  networks:
+    freshrss_network:
+      driver: bridge

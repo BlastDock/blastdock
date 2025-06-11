@@ -1,0 +1,104 @@
+template_info:
+  description: "Apache Airflow - Workflow automation platform"
+  version: "1.0"
+  services:
+    - airflow-webserver
+    - airflow-scheduler
+    - postgres
+    - redis
+
+fields:
+  webserver_port:
+    type: port
+    description: "Webserver port"
+    default: "8080"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Airflow admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      environment:
+        - POSTGRES_USER=airflow
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_DB=airflow
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - airflow_network
+      restart: unless-stopped
+    
+    redis:
+      image: redis:latest
+      container_name: "{{ project_name }}_redis"
+      networks:
+        - airflow_network
+      restart: unless-stopped
+    
+    airflow-webserver:
+      image: apache/airflow:2.5.1
+      container_name: "{{ project_name }}_airflow_webserver"
+      depends_on:
+        - postgres
+        - redis
+      environment:
+        - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:{{ postgres_password }}@postgres/airflow
+        - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:{{ postgres_password }}@postgres/airflow
+        - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+        - AIRFLOW__WEBSERVER__SECRET_KEY={{ admin_password }}
+        - AIRFLOW_WWW_USER_CREATE=true
+        - AIRFLOW_WWW_USER_USERNAME=admin
+        - AIRFLOW_WWW_USER_PASSWORD={{ admin_password }}
+      volumes:
+        - airflow_logs:/opt/airflow/logs
+        - airflow_dags:/opt/airflow/dags
+      command: webserver
+      ports:
+        - "{{ webserver_port }}:8080"
+      networks:
+        - airflow_network
+      restart: unless-stopped
+    
+    airflow-scheduler:
+      image: apache/airflow:2.5.1
+      container_name: "{{ project_name }}_airflow_scheduler"
+      depends_on:
+        - postgres
+        - redis
+      environment:
+        - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+        - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:{{ postgres_password }}@postgres/airflow
+        - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://airflow:{{ postgres_password }}@postgres/airflow
+        - AIRFLOW__CELERY__BROKER_URL=redis://:@redis:6379/0
+      volumes:
+        - airflow_logs:/opt/airflow/logs
+        - airflow_dags:/opt/airflow/dags
+      command: scheduler
+      networks:
+        - airflow_network
+      restart: unless-stopped
+  
+  volumes:
+    postgres_data:
+    airflow_logs:
+    airflow_dags:
+  
+  networks:
+    airflow_network:
+      driver: bridge

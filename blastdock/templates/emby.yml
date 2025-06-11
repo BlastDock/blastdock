@@ -1,0 +1,49 @@
+template_info:
+  description: "Emby - Media server for personal streaming"
+  version: "1.0"
+  services:
+    - emby
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8096"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "8920"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    emby:
+      image: emby/embyserver:latest
+      container_name: "{{ project_name }}_emby"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8096"
+        - "{{ https_port }}:8920"
+      environment:
+        - UID=1000
+        - GID=1000
+        - TZ=Europe/London
+      volumes:
+        - emby_config:/config
+        - emby_media:/media
+      networks:
+        - emby_network
+  
+  volumes:
+    emby_config:
+      driver: local
+    emby_media:
+      driver: local
+  
+  networks:
+    emby_network:
+      driver: bridge

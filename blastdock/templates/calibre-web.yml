@@ -1,0 +1,56 @@
+template_info:
+  description: "Calibre-Web - Web app for browsing, reading and downloading eBooks"
+  version: "1.0"
+  services:
+    - calibre-web
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8083"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    calibre-web:
+      image: linuxserver/calibre-web:latest
+      container_name: "{{ project_name }}_calibre_web"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8083"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/London
+        - DOCKER_MODS=linuxserver/mods:universal-calibre
+        - OAUTHLIB_RELAX_TOKEN_SCOPE=1
+      volumes:
+        - calibre_config:/config
+        - calibre_books:/books
+      networks:
+        - calibre_network
+  
+  volumes:
+    calibre_config:
+      driver: local
+    calibre_books:
+      driver: local
+  
+  networks:
+    calibre_network:
+      driver: bridge

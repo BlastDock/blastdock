@@ -1,0 +1,56 @@
+template_info:
+  description: "Airsonic - Free and open source media streaming server"
+  version: "1.0"
+  services:
+    - airsonic
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "4040"
+    required: true
+  
+  context_path:
+    type: string
+    description: "Context path"
+    default: "/"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    airsonic:
+      image: linuxserver/airsonic:latest
+      container_name: "{{ project_name }}_airsonic"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:4040"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/London
+        - CONTEXT_PATH={{ context_path }}
+        - JAVA_OPTS=-Dserver.use-forward-headers=true
+      volumes:
+        - airsonic_config:/config
+        - airsonic_music:/music
+        - airsonic_playlists:/playlists
+        - airsonic_podcasts:/podcasts
+      networks:
+        - airsonic_network
+  
+  volumes:
+    airsonic_config:
+      driver: local
+    airsonic_music:
+      driver: local
+    airsonic_playlists:
+      driver: local
+    airsonic_podcasts:
+      driver: local
+  
+  networks:
+    airsonic_network:
+      driver: bridge

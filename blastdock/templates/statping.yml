@@ -1,0 +1,89 @@
+template_info:
+  description: "Statping - Status Page for monitoring your websites and applications"
+  version: "1.0"
+  services:
+    - statping
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_user:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=statping
+        - POSTGRES_DB=statping
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - statping_network
+    
+    statping:
+      image: statping/statping:latest
+      container_name: "{{ project_name }}_statping"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - DB_CONN=postgres
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_USER=statping
+        - DB_PASS={{ db_password }}
+        - DB_DATABASE=statping
+        - NAME=Statping
+        - DESCRIPTION=Status Page & Monitoring Server
+        - ADMIN_USER={{ admin_user }}
+        - ADMIN_PASSWORD={{ admin_password }}
+        - ADMIN_EMAIL={{ admin_email }}
+      volumes:
+        - statping_data:/app
+      networks:
+        - statping_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    statping_data:
+      driver: local
+  
+  networks:
+    statping_network:
+      driver: bridge

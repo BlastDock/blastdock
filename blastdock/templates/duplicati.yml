@@ -1,0 +1,41 @@
+template_info:
+  description: "Duplicati - Free backup software to store encrypted backups online"
+  version: "1.0"
+  services:
+    - duplicati
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8200"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    duplicati:
+      image: duplicati/duplicati:latest
+      container_name: "{{ project_name }}_duplicati"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8200"
+      environment:
+        - TZ=Europe/London
+      volumes:
+        - duplicati_config:/data
+        - duplicati_backups:/backups
+        - /:/source:ro
+      networks:
+        - duplicati_network
+  
+  volumes:
+    duplicati_config:
+      driver: local
+    duplicati_backups:
+      driver: local
+  
+  networks:
+    duplicati_network:
+      driver: bridge

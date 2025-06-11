@@ -1,0 +1,50 @@
+template_info:
+  description: "HashiCorp Nomad - Workload orchestrator"
+  version: "1.0"
+  services:
+    - nomad
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP API port"
+    default: "4646"
+    required: true
+  
+  rpc_port:
+    type: port
+    description: "RPC port"
+    default: "4647"
+    required: true
+  
+  serf_port:
+    type: port
+    description: "Serf port"
+    default: "4648"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    nomad:
+      image: hashicorp/nomad:latest
+      container_name: "{{ project_name }}_nomad"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:4646"
+        - "{{ rpc_port }}:4647"
+        - "{{ serf_port }}:4648"
+      command: agent -dev -bind=0.0.0.0 -log-level=INFO
+      volumes:
+        - nomad_data:/nomad/data
+      networks:
+        - nomad_network
+  
+  volumes:
+    nomad_data:
+      driver: local
+  
+  networks:
+    nomad_network:
+      driver: bridge

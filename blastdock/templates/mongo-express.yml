@@ -1,0 +1,58 @@
+template_info:
+  description: "Mongo Express - Web-based MongoDB admin interface"
+  version: "1.0"
+  services:
+    - mongo-express
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8081"
+    required: true
+  
+  mongodb_host:
+    type: string
+    description: "MongoDB host"
+    default: "mongodb"
+    required: true
+  
+  mongodb_port:
+    type: string
+    description: "MongoDB port"
+    default: "27017"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mongo-express:
+      image: mongo-express:latest
+      container_name: "{{ project_name }}_mongo_express"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8081"
+      environment:
+        - ME_CONFIG_MONGODB_SERVER={{ mongodb_host }}
+        - ME_CONFIG_MONGODB_PORT={{ mongodb_port }}
+        - ME_CONFIG_BASICAUTH_USERNAME={{ admin_username }}
+        - ME_CONFIG_BASICAUTH_PASSWORD={{ admin_password }}
+      networks:
+        - mongo_express_network
+  
+  networks:
+    mongo_express_network:
+      driver: bridge

@@ -1,0 +1,100 @@
+template_info:
+  description: "PeerTube - Decentralized video hosting network"
+  version: "1.0"
+  services:
+    - peertube
+    - postgres
+    - redis
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "9000"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "9443"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=peertube
+        - POSTGRES_DB=peertube
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - peertube_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - peertube_network
+    
+    peertube:
+      image: chocobozzz/peertube:latest
+      container_name: "{{ project_name }}_peertube"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ http_port }}:9000"
+        - "{{ https_port }}:9443"
+      environment:
+        - PT_INITIAL_ROOT_EMAIL={{ admin_email }}
+        - PT_POSTGRES_USERNAME=peertube
+        - PT_POSTGRES_PASSWORD={{ db_password }}
+        - PT_POSTGRES_DATABASE=peertube
+        - PT_POSTGRES_HOST=postgres
+        - PT_REDIS_HOST=redis
+        - PT_TRUST_PROXY=["127.0.0.1", "loopback", "172.18.0.0/16"]
+        - PT_WEBSERVER_HOSTNAME={{ domain }}
+        - PT_WEBSERVER_PORT={{ http_port }}
+      volumes:
+        - peertube_config:/config
+        - peertube_data:/data
+      networks:
+        - peertube_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    peertube_config:
+      driver: local
+    peertube_data:
+      driver: local
+  
+  networks:
+    peertube_network:
+      driver: bridge

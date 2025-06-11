@@ -1,0 +1,71 @@
+template_info:
+  description: "Elasticsearch - Search and analytics engine"
+  version: "1.0"
+  services:
+    - elasticsearch
+    - kibana
+
+fields:
+  es_port:
+    type: port
+    description: "Elasticsearch port"
+    default: "9200"
+    required: true
+  
+  kibana_port:
+    type: port
+    description: "Kibana port"
+    default: "5601"
+    required: true
+  
+  es_version:
+    type: string
+    description: "Elasticsearch version"
+    default: "8.8.0"
+    required: true
+  
+  es_memory:
+    type: string
+    description: "Elasticsearch memory limit"
+    default: "1g"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:{{ es_version }}
+      container_name: "{{ project_name }}_elasticsearch"
+      restart: unless-stopped
+      ports:
+        - "{{ es_port }}:9200"
+      environment:
+        - discovery.type=single-node
+        - ES_JAVA_OPTS=-Xms{{ es_memory }} -Xmx{{ es_memory }}
+        - xpack.security.enabled=false
+      volumes:
+        - elasticsearch_data:/usr/share/elasticsearch/data
+      networks:
+        - elastic_network
+    
+    kibana:
+      image: docker.elastic.co/kibana/kibana:{{ es_version }}
+      container_name: "{{ project_name }}_kibana"
+      restart: unless-stopped
+      ports:
+        - "{{ kibana_port }}:5601"
+      environment:
+        - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      depends_on:
+        - elasticsearch
+      networks:
+        - elastic_network
+  
+  volumes:
+    elasticsearch_data:
+      driver: local
+  
+  networks:
+    elastic_network:
+      driver: bridge

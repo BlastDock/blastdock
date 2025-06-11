@@ -1,0 +1,119 @@
+template_info:
+  description: "Taiga - Project management platform"
+  version: "1.0"
+  services:
+    - taiga-back
+    - taiga-front
+    - postgres
+    - rabbitmq
+    - redis
+
+fields:
+  front_port:
+    type: port
+    description: "Frontend port"
+    default: "9000"
+    required: true
+  
+  back_port:
+    type: port
+    description: "Backend port"
+    default: "8000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret_key:
+    type: password
+    description: "Secret key"
+    default: "auto"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_DB=taiga
+        - POSTGRES_USER=taiga
+        - POSTGRES_PASSWORD={{ db_password }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - taiga_network
+    
+    rabbitmq:
+      image: rabbitmq:3-management
+      container_name: "{{ project_name }}_rabbitmq"
+      restart: unless-stopped
+      networks:
+        - taiga_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - taiga_network
+    
+    taiga-back:
+      image: taigaio/taiga-back:latest
+      container_name: "{{ project_name }}_taiga_back"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - rabbitmq
+        - redis
+      ports:
+        - "{{ back_port }}:8000"
+      environment:
+        - POSTGRES_DB=taiga
+        - POSTGRES_USER=taiga
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_HOST=postgres
+        - RABBITMQ_USER=guest
+        - RABBITMQ_PASS=guest
+        - RABBITMQ_HOST=rabbitmq
+        - RABBITMQ_VHOST=/
+        - TAIGA_SECRET_KEY={{ secret_key }}
+        - TAIGA_SITES_DOMAIN={{ domain }}:{{ front_port }}
+        - TAIGA_SITES_SCHEME=http
+        - REDIS_HOST=redis
+      networks:
+        - taiga_network
+    
+    taiga-front:
+      image: taigaio/taiga-front:latest
+      container_name: "{{ project_name }}_taiga_front"
+      restart: unless-stopped
+      depends_on:
+        - taiga-back
+      ports:
+        - "{{ front_port }}:80"
+      environment:
+        - TAIGA_API_URL=http://{{ domain }}:{{ back_port }}/api/v1/
+        - TAIGA_WEBSOCKETS_URL=ws://{{ domain }}:{{ back_port }}/events
+      networks:
+        - taiga_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    taiga_network:
+      driver: bridge

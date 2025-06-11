@@ -1,0 +1,56 @@
+template_info:
+  description: "Caddy - Modern web server with automatic HTTPS"
+  version: "1.0"
+  services:
+    - caddy
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    caddy:
+      image: caddy:latest
+      container_name: "{{ project_name }}_caddy"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+      environment:
+        - DOMAIN={{ domain }}
+      volumes:
+        - caddy_data:/data
+        - caddy_config:/config
+        - caddy_sites:/etc/caddy/sites
+      networks:
+        - caddy_network
+  
+  volumes:
+    caddy_data:
+      driver: local
+    caddy_config:
+      driver: local
+    caddy_sites:
+      driver: local
+  
+  networks:
+    caddy_network:
+      driver: bridge

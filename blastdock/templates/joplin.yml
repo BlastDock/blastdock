@@ -1,0 +1,82 @@
+template_info:
+  description: "Joplin Server - Synchronization server for Joplin note-taking app"
+  version: "1.0"
+  services:
+    - joplin
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "22300"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=joplin
+        - POSTGRES_DB=joplin
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - joplin_network
+    
+    joplin:
+      image: joplin/server:latest
+      container_name: "{{ project_name }}_joplin"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:22300"
+      environment:
+        - APP_PORT=22300
+        - APP_BASE_URL=http://localhost:{{ port }}
+        - DB_CLIENT=pg
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DATABASE=joplin
+        - POSTGRES_USER=joplin
+        - POSTGRES_PORT=5432
+        - POSTGRES_HOST=postgres
+        - ADMIN_EMAIL={{ admin_email }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - joplin_data:/app/data
+      networks:
+        - joplin_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    joplin_data:
+      driver: local
+  
+  networks:
+    joplin_network:
+      driver: bridge

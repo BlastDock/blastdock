@@ -1,0 +1,92 @@
+template_info:
+  description: "ownCloud - File sharing and collaboration platform"
+  version: "1.0"
+  services:
+    - owncloud
+    - redis
+    - mariadb
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mariadb:
+      image: mariadb:10.6
+      container_name: "{{ project_name }}_mariadb"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ db_password }}
+        - MYSQL_DATABASE=owncloud
+        - MYSQL_USER=owncloud
+        - MYSQL_PASSWORD={{ db_password }}
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - owncloud_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - owncloud_network
+    
+    owncloud:
+      image: owncloud/server:latest
+      container_name: "{{ project_name }}_owncloud"
+      restart: unless-stopped
+      depends_on:
+        - mariadb
+        - redis
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - OWNCLOUD_DOMAIN=localhost:{{ port }}
+        - OWNCLOUD_DB_TYPE=mysql
+        - OWNCLOUD_DB_NAME=owncloud
+        - OWNCLOUD_DB_USERNAME=owncloud
+        - OWNCLOUD_DB_PASSWORD={{ db_password }}
+        - OWNCLOUD_DB_HOST=mariadb
+        - OWNCLOUD_ADMIN_USERNAME={{ admin_username }}
+        - OWNCLOUD_ADMIN_PASSWORD={{ admin_password }}
+        - OWNCLOUD_REDIS_HOST=redis
+        - OWNCLOUD_TRUSTED_DOMAINS=localhost
+      volumes:
+        - owncloud_files:/mnt/data
+      networks:
+        - owncloud_network
+  
+  volumes:
+    mariadb_data:
+      driver: local
+    owncloud_files:
+      driver: local
+  
+  networks:
+    owncloud_network:
+      driver: bridge

@@ -1,0 +1,115 @@
+template_info:
+  description: "Lemmy - A federated alternative to Reddit"
+  version: "1.0"
+  services:
+    - lemmy
+    - lemmy-ui
+    - postgres
+
+fields:
+  ui_port:
+    type: port
+    description: "UI port"
+    default: "1235"
+    required: true
+  
+  backend_port:
+    type: port
+    description: "Backend port"
+    default: "8536"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:14
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=lemmy
+        - POSTGRES_DB=lemmy
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - lemmy_network
+    
+    lemmy:
+      image: dessalines/lemmy:latest
+      container_name: "{{ project_name }}_lemmy"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ backend_port }}:8536"
+      environment:
+        - RUST_LOG=warn
+        - RUST_BACKTRACE=1
+        - LEMMY_DATABASE_URL=postgres://lemmy:{{ db_password }}@postgres:5432/lemmy
+        - LEMMY_HOSTNAME={{ domain }}
+        - LEMMY_BIND=0.0.0.0
+        - LEMMY_PORT=8536
+        - LEMMY_SETUP_ADMIN_USERNAME={{ admin_username }}
+        - LEMMY_SETUP_ADMIN_PASSWORD={{ admin_password }}
+        - LEMMY_SETUP_ADMIN_EMAIL={{ admin_email }}
+      volumes:
+        - lemmy_pictures:/pictures
+      networks:
+        - lemmy_network
+    
+    lemmy-ui:
+      image: dessalines/lemmy-ui:latest
+      container_name: "{{ project_name }}_lemmy_ui"
+      restart: unless-stopped
+      depends_on:
+        - lemmy
+      ports:
+        - "{{ ui_port }}:1234"
+      environment:
+        - LEMMY_UI_LEMMY_INTERNAL_HOST=lemmy:8536
+        - LEMMY_UI_LEMMY_EXTERNAL_HOST={{ domain }}:{{ backend_port }}
+        - LEMMY_UI_HTTPS=false
+      networks:
+        - lemmy_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    lemmy_pictures:
+      driver: local
+  
+  networks:
+    lemmy_network:
+      driver: bridge

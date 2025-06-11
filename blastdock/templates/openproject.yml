@@ -1,0 +1,94 @@
+template_info:
+  description: "OpenProject - Project management software"
+  version: "1.0"
+  services:
+    - openproject
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_firstname:
+    type: string
+    description: "Admin first name"
+    default: "Admin"
+    required: true
+  
+  admin_lastname:
+    type: string
+    description: "Admin last name"
+    default: "User"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=openproject
+        - POSTGRES_DB=openproject
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - openproject_network
+    
+    openproject:
+      image: openproject/community:latest
+      container_name: "{{ project_name }}_openproject"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - DATABASE_URL=postgres://openproject:{{ db_password }}@postgres/openproject
+        - OPENPROJECT_HOST__NAME=localhost
+        - OPENPROJECT_HTTPS=false
+        - OPENPROJECT_ADMIN__EMAIL={{ admin_email }}
+        - OPENPROJECT_ADMIN__PASSWORD={{ admin_password }}
+        - OPENPROJECT_ADMIN__FIRSTNAME={{ admin_firstname }}
+        - OPENPROJECT_ADMIN__LASTNAME={{ admin_lastname }}
+      volumes:
+        - openproject_assets:/var/openproject/assets
+        - openproject_pgdata:/var/openproject/pgdata
+      networks:
+        - openproject_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    openproject_assets:
+      driver: local
+    openproject_pgdata:
+      driver: local
+  
+  networks:
+    openproject_network:
+      driver: bridge

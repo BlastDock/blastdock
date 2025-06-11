@@ -1,0 +1,67 @@
+template_info:
+  description: "Redmine - Flexible project management web application"
+  version: "1.0"
+  services:
+    - redmine
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=redmine
+        - POSTGRES_DB=redmine
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - redmine_network
+    
+    redmine:
+      image: redmine:latest
+      container_name: "{{ project_name }}_redmine"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - REDMINE_DB_POSTGRES=postgres
+        - REDMINE_DB_USERNAME=redmine
+        - REDMINE_DB_PASSWORD={{ db_password }}
+        - REDMINE_DB_DATABASE=redmine
+      volumes:
+        - redmine_files:/usr/src/redmine/files
+        - redmine_plugins:/usr/src/redmine/plugins
+      networks:
+        - redmine_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    redmine_files:
+      driver: local
+    redmine_plugins:
+      driver: local
+  
+  networks:
+    redmine_network:
+      driver: bridge

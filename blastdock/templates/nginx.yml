@@ -1,0 +1,101 @@
+template_info:
+  description: "Nginx web server"
+  version: "1.0"
+  services:
+    - nginx
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  server_name:
+    type: domain
+    description: "Server name"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    nginx:
+      image: nginx:alpine
+      container_name: "{{ project_name }}_nginx"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+      volumes:
+        - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+        - ./www:/var/www/html:ro
+        - ./logs/nginx:/var/log/nginx
+      networks:
+        - nginx_network
+  
+  networks:
+    nginx_network:
+      driver: bridge
+      
+config_files:
+  - path: config/nginx/nginx.conf
+    content: |
+      user nginx;
+      worker_processes auto;
+      error_log /var/log/nginx/error.log notice;
+      pid /var/run/nginx.pid;
+      
+      events {
+          worker_connections 1024;
+      }
+      
+      http {
+          include /etc/nginx/mime.types;
+          default_type application/octet-stream;
+          
+          log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+          
+          access_log /var/log/nginx/access.log main;
+          
+          sendfile on;
+          keepalive_timeout 65;
+          
+          include /etc/nginx/conf.d/*.conf;
+      }
+  
+  - path: config/nginx/conf.d/default.conf
+    content: |
+      server {
+          listen 80;
+          server_name {{ server_name }};
+          root /var/www/html;
+          index index.html;
+          
+          location / {
+              try_files $uri $uri/ =404;
+          }
+      }
+  
+  - path: www/index.html
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <title>Welcome to {{ project_name }}</title>
+      </head>
+      <body>
+          <h1>Welcome to {{ project_name }}</h1>
+          <p>Your Nginx server is running successfully!</p>
+      </body>
+      </html>

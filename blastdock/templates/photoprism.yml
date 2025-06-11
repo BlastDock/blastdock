@@ -1,0 +1,89 @@
+template_info:
+  description: "PhotoPrism - Personal photo management powered by Go and Google TensorFlow"
+  version: "1.0"
+  services:
+    - photoprism
+    - mariadb
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "2342"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mariadb:
+      image: mariadb:10.6
+      container_name: "{{ project_name }}_mariadb"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ db_password }}
+        - MYSQL_DATABASE=photoprism
+        - MYSQL_USER=photoprism
+        - MYSQL_PASSWORD={{ db_password }}
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - photoprism_network
+    
+    photoprism:
+      image: photoprism/photoprism:latest
+      container_name: "{{ project_name }}_photoprism"
+      restart: unless-stopped
+      depends_on:
+        - mariadb
+      ports:
+        - "{{ port }}:2342"
+      environment:
+        - PHOTOPRISM_ADMIN_PASSWORD={{ admin_password }}
+        - PHOTOPRISM_SITE_URL=http://localhost:{{ port }}/
+        - PHOTOPRISM_ORIGINALS_LIMIT=5000
+        - PHOTOPRISM_HTTP_COMPRESSION=gzip
+        - PHOTOPRISM_DEBUG=false
+        - PHOTOPRISM_PUBLIC=false
+        - PHOTOPRISM_READONLY=false
+        - PHOTOPRISM_EXPERIMENTAL=false
+        - PHOTOPRISM_DISABLE_WEBDAV=false
+        - PHOTOPRISM_DISABLE_SETTINGS=false
+        - PHOTOPRISM_DISABLE_TENSORFLOW=false
+        - PHOTOPRISM_DISABLE_FACES=false
+        - PHOTOPRISM_DISABLE_CLASSIFICATION=false
+        - PHOTOPRISM_DARKTABLE_PRESETS=false
+        - PHOTOPRISM_DATABASE_DRIVER=mysql
+        - PHOTOPRISM_DATABASE_SERVER=mariadb:3306
+        - PHOTOPRISM_DATABASE_NAME=photoprism
+        - PHOTOPRISM_DATABASE_USER=photoprism
+        - PHOTOPRISM_DATABASE_PASSWORD={{ db_password }}
+      volumes:
+        - photoprism_originals:/photoprism/originals
+        - photoprism_storage:/photoprism/storage
+      networks:
+        - photoprism_network
+  
+  volumes:
+    mariadb_data:
+      driver: local
+    photoprism_originals:
+      driver: local
+    photoprism_storage:
+      driver: local
+  
+  networks:
+    photoprism_network:
+      driver: bridge

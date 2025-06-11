@@ -1,0 +1,76 @@
+template_info:
+  description: "BookStack - Knowledge base and documentation platform"
+  version: "1.0"
+  services:
+    - bookstack
+    - mysql
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  mysql_password:
+    type: password
+    description: "MySQL password"
+    default: "auto"
+    required: true
+  
+  app_key:
+    type: password
+    description: "Application key"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mysql:
+      image: mysql:8
+      container_name: "{{ project_name }}_mysql"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ mysql_password }}
+        - MYSQL_DATABASE=bookstack
+        - MYSQL_USER=bookstack
+        - MYSQL_PASSWORD={{ mysql_password }}
+      volumes:
+        - mysql_data:/var/lib/mysql
+      networks:
+        - bookstack_network
+    
+    bookstack:
+      image: linuxserver/bookstack:latest
+      container_name: "{{ project_name }}_bookstack"
+      restart: unless-stopped
+      depends_on:
+        - mysql
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - DB_HOST=mysql
+        - DB_PORT=3306
+        - DB_USER=bookstack
+        - DB_PASS={{ mysql_password }}
+        - DB_DATABASE=bookstack
+        - APP_URL=http://localhost:{{ port }}
+        - APP_KEY={{ app_key }}
+      volumes:
+        - bookstack_config:/config
+      networks:
+        - bookstack_network
+  
+  volumes:
+    mysql_data:
+      driver: local
+    bookstack_config:
+      driver: local
+  
+  networks:
+    bookstack_network:
+      driver: bridge

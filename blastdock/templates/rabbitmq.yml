@@ -1,0 +1,64 @@
+template_info:
+  description: "RabbitMQ - Message broker"
+  version: "1.0"
+  services:
+    - rabbitmq
+
+fields:
+  amqp_port:
+    type: port
+    description: "AMQP port"
+    default: "5672"
+    required: true
+  
+  management_port:
+    type: port
+    description: "Management UI port"
+    default: "15672"
+    required: true
+  
+  default_user:
+    type: string
+    description: "Default username"
+    default: "guest"
+    required: true
+  
+  default_pass:
+    type: password
+    description: "Default password"
+    default: "auto"
+    required: true
+  
+  erlang_cookie:
+    type: password
+    description: "Erlang cookie"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    rabbitmq:
+      image: rabbitmq:3-management
+      container_name: "{{ project_name }}_rabbitmq"
+      restart: unless-stopped
+      ports:
+        - "{{ amqp_port }}:5672"
+        - "{{ management_port }}:15672"
+      environment:
+        - RABBITMQ_DEFAULT_USER={{ default_user }}
+        - RABBITMQ_DEFAULT_PASS={{ default_pass }}
+        - RABBITMQ_ERLANG_COOKIE={{ erlang_cookie }}
+      volumes:
+        - rabbitmq_data:/var/lib/rabbitmq
+      networks:
+        - rabbitmq_network
+  
+  volumes:
+    rabbitmq_data:
+      driver: local
+  
+  networks:
+    rabbitmq_network:
+      driver: bridge

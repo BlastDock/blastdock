@@ -1,0 +1,50 @@
+template_info:
+  description: "Apache CouchDB - Document-oriented NoSQL database"
+  version: "1.0"
+  services:
+    - couchdb
+
+fields:
+  port:
+    type: port
+    description: "HTTP port"
+    default: "5984"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    couchdb:
+      image: couchdb:latest
+      container_name: "{{ project_name }}_couchdb"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:5984"
+      environment:
+        - COUCHDB_USER={{ admin_username }}
+        - COUCHDB_PASSWORD={{ admin_password }}
+      volumes:
+        - couchdb_data:/opt/couchdb/data
+      networks:
+        - couchdb_network
+  
+  volumes:
+    couchdb_data:
+      driver: local
+  
+  networks:
+    couchdb_network:
+      driver: bridge

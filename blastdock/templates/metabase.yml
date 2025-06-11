@@ -1,0 +1,62 @@
+template_info:
+  description: "Metabase - Business intelligence and analytics"
+  version: "1.0"
+  services:
+    - metabase
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=metabase
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=metabase
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - metabase_network
+    
+    metabase:
+      image: metabase/metabase:latest
+      container_name: "{{ project_name }}_metabase"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - MB_DB_TYPE=postgres
+        - MB_DB_DBNAME=metabase
+        - MB_DB_PORT=5432
+        - MB_DB_USER=metabase
+        - MB_DB_PASS={{ db_password }}
+        - MB_DB_HOST=postgres
+      depends_on:
+        - postgres
+      networks:
+        - metabase_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    metabase_network:
+      driver: bridge

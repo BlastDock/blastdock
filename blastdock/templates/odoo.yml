@@ -1,0 +1,107 @@
+template_info:
+  description: "Odoo - Open source ERP and CRM"
+  version: "1.0"
+  services:
+    - odoo
+    - postgres
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8069"
+    required: true
+  
+  longpolling_port:
+    type: port
+    description: "Longpolling port"
+    default: "8072"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  postgres_user:
+    type: string
+    description: "PostgreSQL user"
+    default: "odoo"
+    required: true
+  
+  postgres_db:
+    type: string
+    description: "PostgreSQL database"
+    default: "postgres"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Odoo admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    odoo:
+      image: odoo:latest
+      container_name: "{{ project_name }}_odoo"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8069"
+        - "{{ longpolling_port }}:8072"
+      environment:
+        - HOST=postgres
+        - PORT=5432
+        - USER={{ postgres_user }}
+        - PASSWORD={{ postgres_password }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - odoo_data:/var/lib/odoo
+        - ./config/odoo:/etc/odoo
+        - ./addons:/mnt/extra-addons
+      depends_on:
+        - postgres
+      networks:
+        - odoo_network
+    
+    postgres:
+      image: postgres:14-alpine
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER={{ postgres_user }}
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_DB={{ postgres_db }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - odoo_network
+  
+  volumes:
+    odoo_data:
+      driver: local
+    postgres_data:
+      driver: local
+  
+  networks:
+    odoo_network:
+      driver: bridge
+
+config_files:
+  - path: config/odoo/odoo.conf
+    content: |
+      [options]
+      addons_path = /mnt/extra-addons
+      data_dir = /var/lib/odoo
+      admin_passwd = {{ admin_password }}
+      db_host = postgres
+      db_port = 5432
+      db_user = {{ postgres_user }}
+      db_password = {{ postgres_password }}
+      db_name = {{ postgres_db }}
+      http_port = 8069
+      longpolling_port = 8072

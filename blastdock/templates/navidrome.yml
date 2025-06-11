@@ -1,0 +1,54 @@
+template_info:
+  description: "Navidrome - Modern Music Server and Streamer"
+  version: "1.0"
+  services:
+    - navidrome
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "4533"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    navidrome:
+      image: deluan/navidrome:latest
+      container_name: "{{ project_name }}_navidrome"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:4533"
+      environment:
+        - ND_SCANSCHEDULE=1h
+        - ND_LOGLEVEL=info
+        - ND_BASEURL=""
+        - ND_DEFAULTTHEME=Dark
+        - ND_DEFAULTLANGUAGE=en
+        - ND_ENABLETRANSCODINGCONFIG=true
+        - ND_TRANSCODINGCACHESIZE=100MB
+        - ND_SESSIONTIMEOUT=24h
+        - ND_ADMINPASSWORD={{ admin_password }}
+      volumes:
+        - navidrome_data:/data
+        - navidrome_music:/music:ro
+      networks:
+        - navidrome_network
+  
+  volumes:
+    navidrome_data:
+      driver: local
+    navidrome_music:
+      driver: local
+  
+  networks:
+    navidrome_network:
+      driver: bridge

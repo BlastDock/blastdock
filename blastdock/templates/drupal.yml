@@ -1,0 +1,90 @@
+template_info:
+  description: "Drupal - Content management framework"
+  version: "1.0"
+  services:
+    - drupal
+    - postgresql
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  drupal_version:
+    type: string
+    description: "Drupal version"
+    default: "latest"
+    required: true
+  
+  postgres_password:
+    type: password
+    description: "PostgreSQL password"
+    default: "auto"
+    required: true
+  
+  postgres_db:
+    type: string
+    description: "Database name"
+    default: "drupal"
+    required: true
+  
+  postgres_user:
+    type: string
+    description: "Database user"
+    default: "drupal"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    drupal:
+      image: drupal:{{ drupal_version }}
+      container_name: "{{ project_name }}_drupal"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+      environment:
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_USER={{ postgres_user }}
+        - POSTGRES_DB={{ postgres_db }}
+      volumes:
+        - drupal_modules:/var/www/html/modules
+        - drupal_profiles:/var/www/html/profiles
+        - drupal_themes:/var/www/html/themes
+        - drupal_sites:/var/www/html/sites
+      depends_on:
+        - postgresql
+      networks:
+        - drupal_network
+    
+    postgresql:
+      image: postgres:14-alpine
+      container_name: "{{ project_name }}_postgresql"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ postgres_password }}
+        - POSTGRES_USER={{ postgres_user }}
+        - POSTGRES_DB={{ postgres_db }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - drupal_network
+  
+  volumes:
+    drupal_modules:
+      driver: local
+    drupal_profiles:
+      driver: local
+    drupal_themes:
+      driver: local
+    drupal_sites:
+      driver: local
+    postgres_data:
+      driver: local
+  
+  networks:
+    drupal_network:
+      driver: bridge

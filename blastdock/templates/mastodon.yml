@@ -1,0 +1,195 @@
+template_info:
+  description: "Mastodon - Self-hosted social networking service"
+  version: "1.0"
+  services:
+    - mastodon-web
+    - mastodon-streaming
+    - mastodon-sidekiq
+    - postgres
+    - redis
+    - elasticsearch
+
+fields:
+  web_port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  streaming_port:
+    type: port
+    description: "Streaming port"
+    default: "4000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret_key_base:
+    type: password
+    description: "Secret key base"
+    default: "auto"
+    required: true
+  
+  otp_secret:
+    type: password
+    description: "OTP secret"
+    default: "auto"
+    required: true
+  
+  domain:
+    type: domain
+    description: "Domain name"
+    default: "localhost"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:14
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=mastodon
+        - POSTGRES_DB=mastodon
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - mastodon_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - mastodon_network
+    
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+      container_name: "{{ project_name }}_elasticsearch"
+      restart: unless-stopped
+      environment:
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      volumes:
+        - elasticsearch_data:/usr/share/elasticsearch/data
+      networks:
+        - mastodon_network
+    
+    mastodon-web:
+      image: tootsuite/mastodon:latest
+      container_name: "{{ project_name }}_mastodon_web"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+        - elasticsearch
+      ports:
+        - "{{ web_port }}:3000"
+      environment:
+        - LOCAL_DOMAIN={{ domain }}
+        - RAILS_ENV=production
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_NAME=mastodon
+        - DB_USER=mastodon
+        - DB_PASS={{ db_password }}
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - ES_ENABLED=true
+        - ES_HOST=elasticsearch
+        - ES_PORT=9200
+        - SECRET_KEY_BASE={{ secret_key_base }}
+        - OTP_SECRET={{ otp_secret }}
+        - SMTP_SERVER=smtp.example.com
+        - SMTP_PORT=587
+        - SMTP_LOGIN=
+        - SMTP_PASSWORD=
+        - SMTP_FROM_ADDRESS=notifications@example.com
+        - WEB_DOMAIN={{ domain }}
+        - STREAMING_API_BASE_URL=http://localhost:{{ streaming_port }}
+        - SINGLE_USER_MODE=false
+        - ADMIN_EMAIL={{ admin_email }}
+      command: bash -c "bundle exec rails db:migrate && bundle exec rails assets:precompile && bundle exec rails server -b 0.0.0.0"
+      volumes:
+        - mastodon_system:/mastodon/public/system
+      networks:
+        - mastodon_network
+    
+    mastodon-streaming:
+      image: tootsuite/mastodon:latest
+      container_name: "{{ project_name }}_mastodon_streaming"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ streaming_port }}:4000"
+      environment:
+        - LOCAL_DOMAIN={{ domain }}
+        - RAILS_ENV=production
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_NAME=mastodon
+        - DB_USER=mastodon
+        - DB_PASS={{ db_password }}
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - SECRET_KEY_BASE={{ secret_key_base }}
+        - OTP_SECRET={{ otp_secret }}
+      command: node ./streaming
+      networks:
+        - mastodon_network
+    
+    mastodon-sidekiq:
+      image: tootsuite/mastodon:latest
+      container_name: "{{ project_name }}_mastodon_sidekiq"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      environment:
+        - LOCAL_DOMAIN={{ domain }}
+        - RAILS_ENV=production
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_NAME=mastodon
+        - DB_USER=mastodon
+        - DB_PASS={{ db_password }}
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - ES_ENABLED=true
+        - ES_HOST=elasticsearch
+        - ES_PORT=9200
+        - SECRET_KEY_BASE={{ secret_key_base }}
+        - OTP_SECRET={{ otp_secret }}
+      command: bundle exec sidekiq
+      volumes:
+        - mastodon_system:/mastodon/public/system
+      networks:
+        - mastodon_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    elasticsearch_data:
+      driver: local
+    mastodon_system:
+      driver: local
+  
+  networks:
+    mastodon_network:
+      driver: bridge

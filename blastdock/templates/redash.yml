@@ -1,0 +1,108 @@
+template_info:
+  description: "Redash - Connect to any data source and visualize"
+  version: "1.0"
+  services:
+    - server
+    - scheduler
+    - worker
+    - redis
+    - postgres
+
+fields:
+  web_port:
+    type: port
+    description: "Web interface port"
+    default: "5000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  cookie_secret:
+    type: password
+    description: "Cookie secret"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=redash
+        - POSTGRES_DB=redash
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - redash_network
+    
+    redis:
+      image: redis:latest
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      volumes:
+        - redis_data:/data
+      networks:
+        - redash_network
+    
+    server:
+      image: redash/redash:latest
+      container_name: "{{ project_name }}_server"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ web_port }}:5000"
+      environment:
+        - REDASH_COOKIE_SECRET={{ cookie_secret }}
+        - REDASH_DATABASE_URL=postgresql://redash:{{ db_password }}@postgres/redash
+        - REDASH_REDIS_URL=redis://redis:6379/0
+      networks:
+        - redash_network
+    
+    worker:
+      image: redash/redash:latest
+      container_name: "{{ project_name }}_worker"
+      restart: unless-stopped
+      depends_on:
+        - server
+      environment:
+        - REDASH_COOKIE_SECRET={{ cookie_secret }}
+        - REDASH_DATABASE_URL=postgresql://redash:{{ db_password }}@postgres/redash
+        - REDASH_REDIS_URL=redis://redis:6379/0
+      command: worker
+      networks:
+        - redash_network
+    
+    scheduler:
+      image: redash/redash:latest
+      container_name: "{{ project_name }}_scheduler"
+      restart: unless-stopped
+      depends_on:
+        - server
+      environment:
+        - REDASH_COOKIE_SECRET={{ cookie_secret }}
+        - REDASH_DATABASE_URL=postgresql://redash:{{ db_password }}@postgres/redash
+        - REDASH_REDIS_URL=redis://redis:6379/0
+      command: scheduler
+      networks:
+        - redash_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    redis_data:
+      driver: local
+  
+  networks:
+    redash_network:
+      driver: bridge

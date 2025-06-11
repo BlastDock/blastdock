@@ -1,0 +1,35 @@
+template_info:
+  description: "Uptime Kuma - Self-hosted monitoring tool"
+  version: "1.0"
+  services:
+    - uptime-kuma
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3001"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    uptime-kuma:
+      image: louislam/uptime-kuma:latest
+      container_name: "{{ project_name }}_uptime_kuma"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:3001"
+      volumes:
+        - uptime_kuma_data:/app/data
+      networks:
+        - uptime_kuma_network
+  
+  volumes:
+    uptime_kuma_data:
+      driver: local
+  
+  networks:
+    uptime_kuma_network:
+      driver: bridge

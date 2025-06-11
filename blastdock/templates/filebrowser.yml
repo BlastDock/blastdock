@@ -1,0 +1,53 @@
+template_info:
+  description: "File Browser - Web-based file manager"
+  version: "1.0"
+  services:
+    - filebrowser
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    filebrowser:
+      image: filebrowser/filebrowser:latest
+      container_name: "{{ project_name }}_filebrowser"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - FB_BASEURL=""
+      volumes:
+        - filebrowser_data:/srv
+        - filebrowser_config:/config
+      command: --username {{ admin_username }} --password {{ admin_password }}
+      networks:
+        - filebrowser_network
+  
+  volumes:
+    filebrowser_data:
+      driver: local
+    filebrowser_config:
+      driver: local
+  
+  networks:
+    filebrowser_network:
+      driver: bridge

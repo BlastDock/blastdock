@@ -1,0 +1,83 @@
+template_info:
+  description: "Matomo - Open source analytics platform"
+  version: "1.0"
+  services:
+    - matomo
+    - mariadb
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  db_root_password:
+    type: password
+    description: "Database root password"
+    default: "auto"
+    required: true
+  
+  db_name:
+    type: string
+    description: "Database name"
+    default: "matomo"
+    required: true
+  
+  db_user:
+    type: string
+    description: "Database user"
+    default: "matomo"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    matomo:
+      image: matomo:latest
+      container_name: "{{ project_name }}_matomo"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+      environment:
+        - MATOMO_DATABASE_HOST=mariadb
+        - MATOMO_DATABASE_DBNAME={{ db_name }}
+        - MATOMO_DATABASE_USERNAME={{ db_user }}
+        - MATOMO_DATABASE_PASSWORD={{ db_password }}
+      volumes:
+        - matomo_data:/var/www/html
+      depends_on:
+        - mariadb
+      networks:
+        - matomo_network
+    
+    mariadb:
+      image: mariadb:10.5
+      container_name: "{{ project_name }}_mariadb"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ db_root_password }}
+        - MYSQL_DATABASE={{ db_name }}
+        - MYSQL_USER={{ db_user }}
+        - MYSQL_PASSWORD={{ db_password }}
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - matomo_network
+  
+  volumes:
+    matomo_data:
+      driver: local
+    mariadb_data:
+      driver: local
+  
+  networks:
+    matomo_network:
+      driver: bridge

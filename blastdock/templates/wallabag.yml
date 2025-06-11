@@ -1,0 +1,86 @@
+template_info:
+  description: "Wallabag - Self-hosted read-it-later app"
+  version: "1.0"
+  services:
+    - wallabag
+    - redis
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret:
+    type: password
+    description: "Secret key"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=wallabag
+        - POSTGRES_DB=wallabag
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - wallabag_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - wallabag_network
+    
+    wallabag:
+      image: wallabag/wallabag:latest
+      container_name: "{{ project_name }}_wallabag"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - SYMFONY__ENV__DATABASE_DRIVER=pdo_pgsql
+        - SYMFONY__ENV__DATABASE_HOST=postgres
+        - SYMFONY__ENV__DATABASE_PORT=5432
+        - SYMFONY__ENV__DATABASE_NAME=wallabag
+        - SYMFONY__ENV__DATABASE_USER=wallabag
+        - SYMFONY__ENV__DATABASE_PASSWORD={{ db_password }}
+        - SYMFONY__ENV__DOMAIN_NAME=http://localhost:{{ port }}
+        - SYMFONY__ENV__SERVER_NAME=Wallabag
+        - SYMFONY__ENV__REDIS_HOST=redis
+        - SYMFONY__ENV__REDIS_PORT=6379
+        - SYMFONY__ENV__SECRET={{ secret }}
+      volumes:
+        - wallabag_images:/var/www/wallabag/web/assets/images
+      networks:
+        - wallabag_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    wallabag_images:
+      driver: local
+  
+  networks:
+    wallabag_network:
+      driver: bridge

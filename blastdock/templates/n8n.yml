@@ -1,0 +1,51 @@
+template_info:
+  description: "n8n workflow automation tool"
+  version: "1.0"
+  services:
+    - n8n
+
+fields:
+  n8n_port:
+    type: port
+    description: "n8n web interface port"
+    default: "5678"
+    required: true
+  
+  timezone:
+    type: string
+    description: "Timezone"
+    default: "UTC"
+    required: false
+  
+  webhook_url:
+    type: domain
+    description: "Webhook URL (optional)"
+    default: ""
+    required: false
+
+compose:
+  version: '3.8'
+  
+  services:
+    n8n:
+      image: n8nio/n8n:latest
+      container_name: "{{ project_name }}_n8n"
+      restart: unless-stopped
+      ports:
+        - "{{ n8n_port }}:5678"
+      environment:
+        - GENERIC_TIMEZONE={{ timezone }}
+        - WEBHOOK_URL={{ webhook_url }}
+        - N8N_METRICS=true
+      volumes:
+        - n8n_data:/home/node/.n8n
+      networks:
+        - n8n_network
+  
+  volumes:
+    n8n_data:
+      driver: local
+  
+  networks:
+    n8n_network:
+      driver: bridge

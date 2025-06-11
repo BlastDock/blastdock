@@ -1,0 +1,50 @@
+template_info:
+  description: "Apache Cassandra - Distributed NoSQL database"
+  version: "1.0"
+  services:
+    - cassandra
+
+fields:
+  cql_port:
+    type: port
+    description: "CQL native transport port"
+    default: "9042"
+    required: true
+  
+  jmx_port:
+    type: port
+    description: "JMX monitoring port"
+    default: "7199"
+    required: true
+  
+  cluster_name:
+    type: string
+    description: "Cluster name"
+    default: "My Cluster"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    cassandra:
+      image: cassandra:latest
+      container_name: "{{ project_name }}_cassandra"
+      restart: unless-stopped
+      ports:
+        - "{{ cql_port }}:9042"
+        - "{{ jmx_port }}:7199"
+      environment:
+        - CASSANDRA_CLUSTER_NAME={{ cluster_name }}
+      volumes:
+        - cassandra_data:/var/lib/cassandra
+      networks:
+        - cassandra_network
+  
+  volumes:
+    cassandra_data:
+      driver: local
+  
+  networks:
+    cassandra_network:
+      driver: bridge

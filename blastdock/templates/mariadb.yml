@@ -1,0 +1,64 @@
+template_info:
+  description: "MariaDB - Open source relational database"
+  version: "1.0"
+  services:
+    - mariadb
+
+fields:
+  port:
+    type: port
+    description: "Database port"
+    default: "3306"
+    required: true
+  
+  root_password:
+    type: password
+    description: "Root password"
+    default: "auto"
+    required: true
+  
+  database:
+    type: string
+    description: "Database name"
+    default: "mydatabase"
+    required: true
+  
+  user:
+    type: string
+    description: "Database user"
+    default: "user"
+    required: true
+  
+  password:
+    type: password
+    description: "User password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mariadb:
+      image: mariadb:latest
+      container_name: "{{ project_name }}_mariadb"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:3306"
+      environment:
+        - MARIADB_ROOT_PASSWORD={{ root_password }}
+        - MARIADB_DATABASE={{ database }}
+        - MARIADB_USER={{ user }}
+        - MARIADB_PASSWORD={{ password }}
+      volumes:
+        - mariadb_data:/var/lib/mysql
+      networks:
+        - mariadb_network
+  
+  volumes:
+    mariadb_data:
+      driver: local
+  
+  networks:
+    mariadb_network:
+      driver: bridge

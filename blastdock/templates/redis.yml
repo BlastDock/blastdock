@@ -1,0 +1,60 @@
+template_info:
+  description: "Redis cache server"
+  version: "1.0"
+  services:
+    - redis
+
+fields:
+  redis_port:
+    type: port
+    description: "Redis port"
+    default: "6379"
+    required: true
+  
+  redis_password:
+    type: password
+    description: "Redis password (optional)"
+    default: ""
+    required: false
+  
+  redis_maxmemory:
+    type: string
+    description: "Max memory (e.g., 256mb)"
+    default: "256mb"
+    required: false
+
+compose:
+  version: '3.8'
+  
+  services:
+    redis:
+      image: redis:7-alpine
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      ports:
+        - "{{ redis_port }}:6379"
+      command: redis-server --requirepass {{ redis_password }} --maxmemory {{ redis_maxmemory }} --maxmemory-policy allkeys-lru
+      volumes:
+        - redis_data:/data
+        - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      networks:
+        - redis_network
+  
+  volumes:
+    redis_data:
+      driver: local
+  
+  networks:
+    redis_network:
+      driver: bridge
+
+config_files:
+  - path: config/redis/redis.conf
+    content: |
+      # Redis configuration
+      maxmemory {{ redis_maxmemory }}
+      maxmemory-policy allkeys-lru
+      requirepass {{ redis_password }}
+      save 900 1
+      save 300 10
+      save 60 10000

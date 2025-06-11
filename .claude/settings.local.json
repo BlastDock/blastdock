@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test_installation.py:*)",
+      "Bash(python3:*)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(blastdock:*)"
+    ],
+    "deny": []
+  }
+}

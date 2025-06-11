@@ -1,0 +1,81 @@
+template_info:
+  description: "Strapi - Headless CMS"
+  version: "1.0"
+  services:
+    - strapi
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "1337"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=strapi
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=strapi
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - strapi_network
+    
+    strapi:
+      image: strapi/strapi:latest
+      container_name: "{{ project_name }}_strapi"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:1337"
+      depends_on:
+        - postgres
+      environment:
+        - DATABASE_CLIENT=postgres
+        - DATABASE_NAME=strapi
+        - DATABASE_HOST=postgres
+        - DATABASE_PORT=5432
+        - DATABASE_USERNAME=strapi
+        - DATABASE_PASSWORD={{ db_password }}
+        - ADMIN_JWT_SECRET={{ admin_password }}
+        - STRAPI_ADMIN_EMAIL={{ admin_email }}
+        - STRAPI_ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - strapi_data:/srv/app
+      networks:
+        - strapi_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    strapi_data:
+      driver: local
+  
+  networks:
+    strapi_network:
+      driver: bridge

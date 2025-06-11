@@ -1,0 +1,54 @@
+template_info:
+  description: "Komga - Media server for comics/mangas/BDs"
+  version: "1.0"
+  services:
+    - komga
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    komga:
+      image: gotson/komga:latest
+      container_name: "{{ project_name }}_komga"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - KOMGA_USER_EMAIL={{ admin_email }}
+        - KOMGA_USER_PASSWORD={{ admin_password }}
+        - KOMGA_USER_ROLES=ADMIN
+      volumes:
+        - komga_config:/config
+        - komga_books:/books
+      networks:
+        - komga_network
+  
+  volumes:
+    komga_config:
+      driver: local
+    komga_books:
+      driver: local
+  
+  networks:
+    komga_network:
+      driver: bridge

@@ -1,0 +1,44 @@
+template_info:
+  description: "Portainer - Docker management UI"
+  version: "1.0"
+  services:
+    - portainer
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "9000"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "9443"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    portainer:
+      image: portainer/portainer-ce:latest
+      container_name: "{{ project_name }}_portainer"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:9000"
+        - "{{ https_port }}:9443"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+        - portainer_data:/data
+      command: --admin-password={{ admin_password|bcrypt }}
+  
+  volumes:
+    portainer_data:
+      driver: local

@@ -1,0 +1,62 @@
+template_info:
+  description: "Wiki.js - Modern and powerful wiki software"
+  version: "1.0"
+  services:
+    - wikijs
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_DB=wiki
+        - POSTGRES_USER=wikijs
+        - POSTGRES_PASSWORD={{ db_password }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - wikijs_network
+    
+    wikijs:
+      image: requarks/wiki:latest
+      container_name: "{{ project_name }}_wikijs"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - DB_TYPE=postgres
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - DB_USER=wikijs
+        - DB_PASS={{ db_password }}
+        - DB_NAME=wiki
+      networks:
+        - wikijs_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    wikijs_network:
+      driver: bridge

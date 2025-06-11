@@ -1,0 +1,43 @@
+template_info:
+  description: "Portainer CE - Container management platform"
+  version: "1.0"
+  services:
+    - portainer
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "9000"
+    required: true
+  
+  edge_port:
+    type: port
+    description: "Edge agent port"
+    default: "8000"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    portainer:
+      image: portainer/portainer-ce:latest
+      container_name: "{{ project_name }}_portainer"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:9000"
+        - "{{ edge_port }}:8000"
+      volumes:
+        - portainer_data:/data
+        - /var/run/docker.sock:/var/run/docker.sock
+      networks:
+        - portainer_network
+  
+  volumes:
+    portainer_data:
+      driver: local
+  
+  networks:
+    portainer_network:
+      driver: bridge

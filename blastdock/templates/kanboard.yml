@@ -1,0 +1,64 @@
+template_info:
+  description: "Kanboard - Project management software focused on Kanban"
+  version: "1.0"
+  services:
+    - kanboard
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=kanboard
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=kanboard
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - kanboard_network
+    
+    kanboard:
+      image: kanboard/kanboard:latest
+      container_name: "{{ project_name }}_kanboard"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - DATABASE_URL=postgres://kanboard:{{ db_password }}@postgres/kanboard
+      volumes:
+        - kanboard_data:/var/www/app/data
+        - kanboard_plugins:/var/www/app/plugins
+      networks:
+        - kanboard_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    kanboard_data:
+      driver: local
+    kanboard_plugins:
+      driver: local
+  
+  networks:
+    kanboard_network:
+      driver: bridge

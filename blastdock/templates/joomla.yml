@@ -1,0 +1,95 @@
+template_info:
+  description: "Joomla - Content management system"
+  version: "1.0"
+  services:
+    - joomla
+    - mysql
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  mysql_root_password:
+    type: password
+    description: "MySQL root password"
+    default: "auto"
+    required: true
+  
+  mysql_database:
+    type: string
+    description: "Joomla database name"
+    default: "joomla"
+    required: true
+  
+  mysql_user:
+    type: string
+    description: "Joomla database user"
+    default: "joomla"
+    required: true
+  
+  mysql_password:
+    type: password
+    description: "Joomla database password"
+    default: "auto"
+    required: true
+  
+  joomla_admin:
+    type: string
+    description: "Joomla admin username"
+    default: "admin"
+    required: true
+  
+  joomla_password:
+    type: password
+    description: "Joomla admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    joomla:
+      image: joomla:latest
+      container_name: "{{ project_name }}_joomla"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+      environment:
+        - JOOMLA_DB_HOST=mysql
+        - JOOMLA_DB_NAME={{ mysql_database }}
+        - JOOMLA_DB_USER={{ mysql_user }}
+        - JOOMLA_DB_PASSWORD={{ mysql_password }}
+      volumes:
+        - joomla_data:/var/www/html
+      depends_on:
+        - mysql
+      networks:
+        - joomla_network
+    
+    mysql:
+      image: mysql:5.7
+      container_name: "{{ project_name }}_mysql"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ mysql_root_password }}
+        - MYSQL_DATABASE={{ mysql_database }}
+        - MYSQL_USER={{ mysql_user }}
+        - MYSQL_PASSWORD={{ mysql_password }}
+      volumes:
+        - mysql_data:/var/lib/mysql
+      networks:
+        - joomla_network
+  
+  volumes:
+    joomla_data:
+      driver: local
+    mysql_data:
+      driver: local
+  
+  networks:
+    joomla_network:
+      driver: bridge

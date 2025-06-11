@@ -1,0 +1,79 @@
+template_info:
+  description: "Mautic - Open source marketing automation"
+  version: "1.0"
+  services:
+    - mautic
+    - mysql
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  mysql_password:
+    type: password
+    description: "MySQL password"
+    default: "auto"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mysql:
+      image: mysql:8
+      container_name: "{{ project_name }}_mysql"
+      restart: unless-stopped
+      environment:
+        - MYSQL_ROOT_PASSWORD={{ mysql_password }}
+        - MYSQL_DATABASE=mautic
+        - MYSQL_USER=mautic
+        - MYSQL_PASSWORD={{ mysql_password }}
+      volumes:
+        - mysql_data:/var/lib/mysql
+      networks:
+        - mautic_network
+    
+    mautic:
+      image: mautic/mautic:latest
+      container_name: "{{ project_name }}_mautic"
+      restart: unless-stopped
+      depends_on:
+        - mysql
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - MAUTIC_DB_HOST=mysql
+        - MAUTIC_DB_USER=mautic
+        - MAUTIC_DB_PASSWORD={{ mysql_password }}
+        - MAUTIC_DB_NAME=mautic
+        - MAUTIC_ADMIN_PASSWORD={{ admin_password }}
+        - MAUTIC_ADMIN_EMAIL={{ admin_email }}
+      volumes:
+        - mautic_data:/var/www/html
+      networks:
+        - mautic_network
+  
+  volumes:
+    mysql_data:
+      driver: local
+    mautic_data:
+      driver: local
+  
+  networks:
+    mautic_network:
+      driver: bridge

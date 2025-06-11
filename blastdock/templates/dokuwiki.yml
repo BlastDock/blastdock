@@ -1,0 +1,46 @@
+template_info:
+  description: "DokuWiki - Simple to use wiki software"
+  version: "1.0"
+  services:
+    - dokuwiki
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  wiki_title:
+    type: string
+    description: "Wiki title"
+    default: "My DokuWiki"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    dokuwiki:
+      image: linuxserver/dokuwiki:latest
+      container_name: "{{ project_name }}_dokuwiki"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/London
+        - DOKUWIKI_TITLE={{ wiki_title }}
+      volumes:
+        - dokuwiki_config:/config
+      networks:
+        - dokuwiki_network
+  
+  volumes:
+    dokuwiki_config:
+      driver: local
+  
+  networks:
+    dokuwiki_network:
+      driver: bridge

@@ -1,0 +1,35 @@
+template_info:
+  description: "Trilium Notes - Hierarchical note taking application"
+  version: "1.0"
+  services:
+    - trilium
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    trilium:
+      image: zadam/trilium:latest
+      container_name: "{{ project_name }}_trilium"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:8080"
+      volumes:
+        - trilium_data:/home/node/trilium-data
+      networks:
+        - trilium_network
+  
+  volumes:
+    trilium_data:
+      driver: local
+  
+  networks:
+    trilium_network:
+      driver: bridge

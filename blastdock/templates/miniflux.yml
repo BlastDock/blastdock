@@ -1,0 +1,73 @@
+template_info:
+  description: "Miniflux - Minimalist and opinionated feed reader"
+  version: "1.0"
+  services:
+    - miniflux
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=miniflux
+        - POSTGRES_DB=miniflux
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - miniflux_network
+    
+    miniflux:
+      image: miniflux/miniflux:latest
+      container_name: "{{ project_name }}_miniflux"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - DATABASE_URL=postgres://miniflux:{{ db_password }}@postgres/miniflux?sslmode=disable
+        - RUN_MIGRATIONS=1
+        - CREATE_ADMIN=1
+        - ADMIN_USERNAME={{ admin_username }}
+        - ADMIN_PASSWORD={{ admin_password }}
+      networks:
+        - miniflux_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    miniflux_network:
+      driver: bridge

@@ -1,0 +1,133 @@
+template_info:
+  description: "Immich - Self-hosted photo and video backup solution"
+  version: "1.0"
+  services:
+    - immich-server
+    - immich-microservices
+    - immich-machine-learning
+    - immich-web
+    - redis
+    - postgres
+
+fields:
+  web_port:
+    type: port
+    description: "Web interface port"
+    default: "2283"
+    required: true
+  
+  api_port:
+    type: port
+    description: "API port"
+    default: "2283"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  upload_location:
+    type: string
+    description: "Upload location"
+    default: "./library"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:14
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=immich
+        - POSTGRES_DB=immich
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - immich_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - immich_network
+    
+    immich-server:
+      image: ghcr.io/immich-app/immich-server:latest
+      container_name: "{{ project_name }}_immich_server"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ api_port }}:3001"
+      environment:
+        - DB_HOSTNAME=postgres
+        - DB_USERNAME=immich
+        - DB_PASSWORD={{ db_password }}
+        - DB_DATABASE_NAME=immich
+        - REDIS_HOSTNAME=redis
+      volumes:
+        - immich_uploads:{{ upload_location }}
+      networks:
+        - immich_network
+    
+    immich-microservices:
+      image: ghcr.io/immich-app/immich-server:latest
+      container_name: "{{ project_name }}_immich_microservices"
+      restart: unless-stopped
+      depends_on:
+        - immich-server
+      command: ["start.sh", "microservices"]
+      environment:
+        - DB_HOSTNAME=postgres
+        - DB_USERNAME=immich
+        - DB_PASSWORD={{ db_password }}
+        - DB_DATABASE_NAME=immich
+        - REDIS_HOSTNAME=redis
+      volumes:
+        - immich_uploads:{{ upload_location }}
+      networks:
+        - immich_network
+    
+    immich-machine-learning:
+      image: ghcr.io/immich-app/immich-machine-learning:latest
+      container_name: "{{ project_name }}_immich_machine_learning"
+      restart: unless-stopped
+      environment:
+        - REDIS_HOSTNAME=redis
+        - MACHINE_LEARNING_WORKERS=1
+        - MACHINE_LEARNING_CACHE_FOLDER=/cache
+      volumes:
+        - immich_model_cache:/cache
+      networks:
+        - immich_network
+    
+    immich-web:
+      image: ghcr.io/immich-app/immich-web:latest
+      container_name: "{{ project_name }}_immich_web"
+      restart: unless-stopped
+      ports:
+        - "{{ web_port }}:3000"
+      environment:
+        - IMMICH_SERVER_URL=http://immich-server:3001
+      networks:
+        - immich_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    immich_uploads:
+      driver: local
+    immich_model_cache:
+      driver: local
+  
+  networks:
+    immich_network:
+      driver: bridge

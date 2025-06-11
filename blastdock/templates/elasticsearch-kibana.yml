@@ -1,0 +1,80 @@
+template_info:
+  description: "Elasticsearch with Kibana - Search and analytics engine with visualization"
+  version: "1.0"
+  services:
+    - elasticsearch
+    - kibana
+
+fields:
+  elasticsearch_port:
+    type: port
+    description: "Elasticsearch HTTP port"
+    default: "9200"
+    required: true
+  
+  kibana_port:
+    type: port
+    description: "Kibana HTTP port"
+    default: "5601"
+    required: true
+  
+  elastic_password:
+    type: password
+    description: "Elastic user password"
+    default: "auto"
+    required: true
+  
+  cluster_name:
+    type: string
+    description: "Cluster name"
+    default: "elasticsearch-cluster"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:8.6.0
+      container_name: "{{ project_name }}_elasticsearch"
+      restart: unless-stopped
+      ports:
+        - "{{ elasticsearch_port }}:9200"
+      environment:
+        - discovery.type=single-node
+        - cluster.name={{ cluster_name }}
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+        - ELASTIC_PASSWORD={{ elastic_password }}
+        - xpack.security.enabled=true
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+      volumes:
+        - elasticsearch_data:/usr/share/elasticsearch/data
+      networks:
+        - elastic_network
+    
+    kibana:
+      image: docker.elastic.co/kibana/kibana:8.6.0
+      container_name: "{{ project_name }}_kibana"
+      restart: unless-stopped
+      ports:
+        - "{{ kibana_port }}:5601"
+      environment:
+        - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+        - ELASTICSEARCH_USERNAME=elastic
+        - ELASTICSEARCH_PASSWORD={{ elastic_password }}
+      depends_on:
+        - elasticsearch
+      networks:
+        - elastic_network
+  
+  volumes:
+    elasticsearch_data:
+      driver: local
+  
+  networks:
+    elastic_network:
+      driver: bridge

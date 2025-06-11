@@ -1,0 +1,84 @@
+template_info:
+  description: "Misskey - Decentralized microblogging platform"
+  version: "1.0"
+  services:
+    - misskey
+    - postgres
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret_key:
+    type: password
+    description: "Secret key"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=misskey
+        - POSTGRES_DB=misskey
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - misskey_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - misskey_network
+    
+    misskey:
+      image: misskey/misskey:latest
+      container_name: "{{ project_name }}_misskey"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - NODE_ENV=production
+        - POSTGRES_HOST=postgres
+        - POSTGRES_PORT=5432
+        - POSTGRES_DB=misskey
+        - POSTGRES_USER=misskey
+        - POSTGRES_PASSWORD={{ db_password }}
+        - REDIS_HOST=redis
+        - REDIS_PORT=6379
+        - SECRET_KEY={{ secret_key }}
+      volumes:
+        - misskey_files:/misskey/files
+      networks:
+        - misskey_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    misskey_files:
+      driver: local
+  
+  networks:
+    misskey_network:
+      driver: bridge

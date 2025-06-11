@@ -1,0 +1,58 @@
+template_info:
+  description: "etcd - Distributed key-value store"
+  version: "1.0"
+  services:
+    - etcd
+
+fields:
+  client_port:
+    type: port
+    description: "Client port"
+    default: "2379"
+    required: true
+  
+  peer_port:
+    type: port
+    description: "Peer port"
+    default: "2380"
+    required: true
+  
+  node_name:
+    type: string
+    description: "Node name"
+    default: "etcd-node1"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    etcd:
+      image: bitnami/etcd:latest
+      container_name: "{{ project_name }}_etcd"
+      restart: unless-stopped
+      ports:
+        - "{{ client_port }}:2379"
+        - "{{ peer_port }}:2380"
+      environment:
+        - ETCD_NAME={{ node_name }}
+        - ALLOW_NONE_AUTHENTICATION=yes
+        - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+        - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+        - ETCD_INITIAL_ADVERTISE_PEER_URLS=http://etcd:2380
+        - ETCD_LISTEN_PEER_URLS=http://0.0.0.0:2380
+        - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
+        - ETCD_INITIAL_CLUSTER={{ node_name }}=http://etcd:2380
+        - ETCD_INITIAL_CLUSTER_STATE=new
+      volumes:
+        - etcd_data:/bitnami/etcd
+      networks:
+        - etcd_network
+  
+  volumes:
+    etcd_data:
+      driver: local
+  
+  networks:
+    etcd_network:
+      driver: bridge

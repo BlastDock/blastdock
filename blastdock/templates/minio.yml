@@ -1,0 +1,58 @@
+template_info:
+  description: "MinIO - High performance object storage"
+  version: "1.0"
+  services:
+    - minio
+
+fields:
+  api_port:
+    type: port
+    description: "API port"
+    default: "9000"
+    required: true
+  
+  console_port:
+    type: port
+    description: "Web console port"
+    default: "9001"
+    required: true
+  
+  root_user:
+    type: string
+    description: "Root username"
+    default: "minioadmin"
+    required: true
+  
+  root_password:
+    type: password
+    description: "Root password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    minio:
+      image: minio/minio:latest
+      container_name: "{{ project_name }}_minio"
+      restart: unless-stopped
+      ports:
+        - "{{ api_port }}:9000"
+        - "{{ console_port }}:9001"
+      environment:
+        - MINIO_ROOT_USER={{ root_user }}
+        - MINIO_ROOT_PASSWORD={{ root_password }}
+      volumes:
+        - minio_data:/data
+      command: server /data --console-address ":9001"
+      networks:
+        - minio_network
+  
+  volumes:
+    minio_data:
+      driver: local
+  
+  networks:
+    minio_network:
+      driver: bridge

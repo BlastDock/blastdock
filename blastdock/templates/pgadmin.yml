@@ -1,0 +1,51 @@
+template_info:
+  description: "pgAdmin - PostgreSQL administration tool"
+  version: "1.0"
+  services:
+    - pgadmin
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "5050"
+    required: true
+  
+  email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    pgadmin:
+      image: dpage/pgadmin4:latest
+      container_name: "{{ project_name }}_pgadmin"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - PGADMIN_DEFAULT_EMAIL={{ email }}
+        - PGADMIN_DEFAULT_PASSWORD={{ password }}
+        - PGADMIN_CONFIG_SERVER_MODE=True
+      volumes:
+        - pgadmin_data:/var/lib/pgadmin
+      networks:
+        - pgadmin_network
+  
+  volumes:
+    pgadmin_data:
+      driver: local
+  
+  networks:
+    pgadmin_network:
+      driver: bridge

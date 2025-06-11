@@ -1,0 +1,102 @@
+template_info:
+  description: "Funkwhale - A social platform to enjoy and share music"
+  version: "1.0"
+  services:
+    - funkwhale
+    - postgres
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_USER=funkwhale
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=funkwhale
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - funkwhale_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - funkwhale_network
+    
+    funkwhale:
+      image: funkwhale/funkwhale:latest
+      container_name: "{{ project_name }}_funkwhale"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - redis
+      ports:
+        - "{{ port }}:80"
+      environment:
+        - FUNKWHALE_HOSTNAME=localhost
+        - FUNKWHALE_PROTOCOL=http
+        - FUNKWHALE_URL=http://localhost:{{ port }}
+        - DJANGO_SETTINGS_MODULE=config.settings.production
+        - DATABASE_URL=postgresql://funkwhale:{{ db_password }}@postgres/funkwhale
+        - CACHE_URL=redis://redis:6379/0
+        - FUNKWHALE_ADMIN_USERNAME={{ admin_username }}
+        - FUNKWHALE_ADMIN_EMAIL={{ admin_email }}
+        - FUNKWHALE_ADMIN_PASSWORD={{ admin_password }}
+      volumes:
+        - funkwhale_media:/data/media
+        - funkwhale_static:/data/static
+        - funkwhale_data:/data
+      networks:
+        - funkwhale_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    funkwhale_media:
+      driver: local
+    funkwhale_static:
+      driver: local
+    funkwhale_data:
+      driver: local
+  
+  networks:
+    funkwhale_network:
+      driver: bridge

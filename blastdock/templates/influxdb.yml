@@ -1,0 +1,69 @@
+template_info:
+  description: "InfluxDB - Time series database"
+  version: "1.0"
+  services:
+    - influxdb
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP API port"
+    default: "8086"
+    required: true
+  
+  admin_user:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  org:
+    type: string
+    description: "Organization name"
+    default: "my-org"
+    required: true
+  
+  bucket:
+    type: string
+    description: "Initial bucket name"
+    default: "my-bucket"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    influxdb:
+      image: influxdb:latest
+      container_name: "{{ project_name }}_influxdb"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8086"
+      environment:
+        - DOCKER_INFLUXDB_INIT_MODE=setup
+        - DOCKER_INFLUXDB_INIT_USERNAME={{ admin_user }}
+        - DOCKER_INFLUXDB_INIT_PASSWORD={{ admin_password }}
+        - DOCKER_INFLUXDB_INIT_ORG={{ org }}
+        - DOCKER_INFLUXDB_INIT_BUCKET={{ bucket }}
+        - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      volumes:
+        - influxdb_data:/var/lib/influxdb2
+        - influxdb_config:/etc/influxdb2
+      networks:
+        - influxdb_network
+  
+  volumes:
+    influxdb_data:
+      driver: local
+    influxdb_config:
+      driver: local
+  
+  networks:
+    influxdb_network:
+      driver: bridge

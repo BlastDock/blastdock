@@ -1,0 +1,93 @@
+template_info:
+  description: "Zammad - Help desk/customer support system"
+  version: "1.0"
+  services:
+    - zammad
+    - postgres
+    - elasticsearch
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8080"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=zammad
+        - POSTGRES_DB=zammad
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - zammad_network
+    
+    elasticsearch:
+      image: elasticsearch:7.10.1
+      container_name: "{{ project_name }}_elasticsearch"
+      restart: unless-stopped
+      environment:
+        - discovery.type=single-node
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      volumes:
+        - elasticsearch_data:/usr/share/elasticsearch/data
+      networks:
+        - zammad_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - zammad_network
+    
+    zammad:
+      image: zammad/zammad:latest
+      container_name: "{{ project_name }}_zammad"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+        - elasticsearch
+        - redis
+      ports:
+        - "{{ port }}:8080"
+      environment:
+        - POSTGRESQL_HOST=postgres
+        - POSTGRESQL_USER=zammad
+        - POSTGRESQL_PASS={{ db_password }}
+        - POSTGRESQL_DB=zammad
+        - ELASTICSEARCH_HOST=elasticsearch
+        - ELASTICSEARCH_PORT=9200
+        - REDIS_URL=redis://redis:6379
+      volumes:
+        - zammad_data:/opt/zammad
+      networks:
+        - zammad_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    elasticsearch_data:
+      driver: local
+    zammad_data:
+      driver: local
+  
+  networks:
+    zammad_network:
+      driver: bridge

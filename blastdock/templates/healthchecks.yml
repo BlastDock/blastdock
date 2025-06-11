@@ -1,0 +1,94 @@
+template_info:
+  description: "Healthchecks - A cron job monitoring service"
+  version: "1.0"
+  services:
+    - healthchecks
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "8000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  secret_key:
+    type: password
+    description: "Django secret key"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  site_name:
+    type: string
+    description: "Site name"
+    default: "Healthchecks"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=healthchecks
+        - POSTGRES_DB=healthchecks
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - healthchecks_network
+    
+    healthchecks:
+      image: healthchecks/healthchecks:latest
+      container_name: "{{ project_name }}_healthchecks"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:8000"
+      environment:
+        - SECRET_KEY={{ secret_key }}
+        - DEBUG=False
+        - ALLOWED_HOSTS=*
+        - DB=postgres
+        - DB_NAME=healthchecks
+        - DB_USER=healthchecks
+        - DB_PASSWORD={{ db_password }}
+        - DB_HOST=postgres
+        - DB_PORT=5432
+        - SITE_NAME={{ site_name }}
+        - DEFAULT_FROM_EMAIL={{ admin_email }}
+        - EMAIL_HOST=smtp.example.com
+        - EMAIL_PORT=587
+        - EMAIL_HOST_USER=
+        - EMAIL_HOST_PASSWORD=
+        - EMAIL_USE_TLS=True
+      volumes:
+        - healthchecks_data:/healthchecks
+      networks:
+        - healthchecks_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    healthchecks_data:
+      driver: local
+  
+  networks:
+    healthchecks_network:
+      driver: bridge

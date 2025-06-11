@@ -1,0 +1,52 @@
+template_info:
+  description: "Jellyfin - Free Software Media System"
+  version: "1.0"
+  services:
+    - jellyfin
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8096"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "8920"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    jellyfin:
+      image: jellyfin/jellyfin:latest
+      container_name: "{{ project_name }}_jellyfin"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8096"
+        - "{{ https_port }}:8920"
+      environment:
+        - PUID=1000
+        - PGID=1000
+        - TZ=Europe/London
+      volumes:
+        - jellyfin_config:/config
+        - jellyfin_cache:/cache
+        - jellyfin_media:/media
+      networks:
+        - jellyfin_network
+  
+  volumes:
+    jellyfin_config:
+      driver: local
+    jellyfin_cache:
+      driver: local
+    jellyfin_media:
+      driver: local
+  
+  networks:
+    jellyfin_network:
+      driver: bridge

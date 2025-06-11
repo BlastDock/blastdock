@@ -1,0 +1,81 @@
+template_info:
+  description: "Watchtower - Automatically update Docker containers"
+  version: "1.0"
+  services:
+    - watchtower
+
+fields:
+  interval:
+    type: string
+    description: "Update interval (in seconds)"
+    default: "86400"
+    required: true
+  
+  cleanup:
+    type: boolean
+    description: "Remove old images after updating"
+    default: true
+    required: true
+  
+  notification_email:
+    type: string
+    description: "Email for update notifications"
+    default: ""
+    required: false
+  
+  notification_email_from:
+    type: string
+    description: "Sender email for notifications"
+    default: ""
+    required: false
+  
+  notification_email_server:
+    type: string
+    description: "SMTP server for notifications"
+    default: ""
+    required: false
+  
+  notification_email_server_port:
+    type: port
+    description: "SMTP server port"
+    default: "25"
+    required: false
+  
+  notification_email_server_user:
+    type: string
+    description: "SMTP server username"
+    default: ""
+    required: false
+  
+  notification_email_server_password:
+    type: password
+    description: "SMTP server password"
+    default: ""
+    required: false
+
+compose:
+  version: '3.8'
+  
+  services:
+    watchtower:
+      image: containrrr/watchtower:latest
+      container_name: "{{ project_name }}_watchtower"
+      restart: unless-stopped
+      environment:
+        - TZ=Europe/London
+        - WATCHTOWER_CLEANUP={{ cleanup }}
+        - WATCHTOWER_POLL_INTERVAL={{ interval }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_TO={{ notification_email }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_FROM={{ notification_email_from }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_SERVER={{ notification_email_server }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PORT={{ notification_email_server_port }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_USER={{ notification_email_server_user }}
+        - WATCHTOWER_NOTIFICATION_EMAIL_SERVER_PASSWORD={{ notification_email_server_password }}
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      networks:
+        - watchtower_network
+  
+  networks:
+    watchtower_network:
+      driver: bridge

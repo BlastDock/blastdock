@@ -1,0 +1,51 @@
+template_info:
+  description: "Jenkins - Open source automation server"
+  version: "1.0"
+  services:
+    - jenkins
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  agent_port:
+    type: port
+    description: "Agent port"
+    default: "50000"
+    required: true
+  
+  timezone:
+    type: string
+    description: "Timezone"
+    default: "UTC"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    jenkins:
+      image: jenkins/jenkins:lts
+      container_name: "{{ project_name }}_jenkins"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8080"
+        - "{{ agent_port }}:50000"
+      environment:
+        - TZ={{ timezone }}
+      volumes:
+        - jenkins_home:/var/jenkins_home
+        - /var/run/docker.sock:/var/run/docker.sock
+      networks:
+        - jenkins_network
+  
+  volumes:
+    jenkins_home:
+      driver: local
+  
+  networks:
+    jenkins_network:
+      driver: bridge

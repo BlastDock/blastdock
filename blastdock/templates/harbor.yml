@@ -1,0 +1,154 @@
+template_info:
+  description: "Harbor - Cloud native container registry"
+  version: "1.0"
+  services:
+    - harbor-core
+    - harbor-portal
+    - harbor-db
+    - harbor-jobservice
+    - harbor-registry
+    - redis
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "80"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "443"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  hostname:
+    type: domain
+    description: "External URL (domain/IP)"
+    default: "localhost"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    harbor-core:
+      image: goharbor/harbor-core:v2.6.0
+      container_name: "{{ project_name }}_harbor_core"
+      restart: unless-stopped
+      depends_on:
+        - harbor-db
+        - redis
+      environment:
+        - CORE_SECRET=core-secret
+        - JOBSERVICE_SECRET=jobservice-secret
+        - HARBOR_ADMIN_PASSWORD={{ admin_password }}
+        - DATABASE_TYPE=postgresql
+        - POSTGRESQL_HOST=harbor-db
+        - POSTGRESQL_PORT=5432
+        - POSTGRESQL_USERNAME=postgres
+        - POSTGRESQL_PASSWORD={{ db_password }}
+        - POSTGRESQL_DATABASE=registry
+        - REGISTRY_URL=http://harbor-registry:5000
+        - PORTAL_URL=http://harbor-portal:8080
+        - TOKEN_SERVICE_URL=http://harbor-core:8080/service/token
+        - HARBOR_EXTERNAL_URL=https://{{ hostname }}
+      volumes:
+        - harbor_core_data:/data
+      networks:
+        - harbor_network
+    
+    harbor-portal:
+      image: goharbor/harbor-portal:v2.6.0
+      container_name: "{{ project_name }}_harbor_portal"
+      restart: unless-stopped
+      networks:
+        - harbor_network
+    
+    harbor-db:
+      image: postgres:13
+      container_name: "{{ project_name }}_harbor_db"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_DB=registry
+      volumes:
+        - harbor_db_data:/var/lib/postgresql/data
+      networks:
+        - harbor_network
+    
+    harbor-jobservice:
+      image: goharbor/harbor-jobservice:v2.6.0
+      container_name: "{{ project_name }}_harbor_jobservice"
+      restart: unless-stopped
+      depends_on:
+        - harbor-core
+        - redis
+      environment:
+        - CORE_URL=http://harbor-core:8080
+        - JOBSERVICE_SECRET=jobservice-secret
+        - REGISTRY_URL=http://harbor-registry:5000
+      volumes:
+        - harbor_jobservice_data:/var/log/jobs
+      networks:
+        - harbor_network
+    
+    harbor-registry:
+      image: goharbor/registry-photon:v2.6.0
+      container_name: "{{ project_name }}_harbor_registry"
+      restart: unless-stopped
+      volumes:
+        - harbor_registry_data:/storage
+      networks:
+        - harbor_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      volumes:
+        - harbor_redis_data:/data
+      networks:
+        - harbor_network
+    
+    nginx:
+      image: goharbor/nginx-photon:v2.6.0
+      container_name: "{{ project_name }}_nginx"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:80"
+        - "{{ https_port }}:443"
+      depends_on:
+        - harbor-core
+        - harbor-portal
+        - harbor-registry
+      networks:
+        - harbor_network
+  
+  volumes:
+    harbor_core_data:
+      driver: local
+    harbor_db_data:
+      driver: local
+    harbor_jobservice_data:
+      driver: local
+    harbor_registry_data:
+      driver: local
+    harbor_redis_data:
+      driver: local
+  
+  networks:
+    harbor_network:
+      driver: bridge

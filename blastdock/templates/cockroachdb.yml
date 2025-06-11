@@ -1,0 +1,43 @@
+template_info:
+  description: "CockroachDB - Distributed SQL database"
+  version: "1.0"
+  services:
+    - cockroachdb
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  sql_port:
+    type: port
+    description: "SQL port"
+    default: "26257"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    cockroachdb:
+      image: cockroachdb/cockroach:latest
+      container_name: "{{ project_name }}_cockroachdb"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8080"
+        - "{{ sql_port }}:26257"
+      command: start-single-node --insecure
+      volumes:
+        - cockroachdb_data:/cockroach/cockroach-data
+      networks:
+        - cockroachdb_network
+  
+  volumes:
+    cockroachdb_data:
+      driver: local
+  
+  networks:
+    cockroachdb_network:
+      driver: bridge

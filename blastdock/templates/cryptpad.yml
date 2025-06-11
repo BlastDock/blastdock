@@ -1,0 +1,53 @@
+template_info:
+  description: "CryptPad - Zero knowledge, collaborative real time editing"
+  version: "1.0"
+  services:
+    - cryptpad
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    cryptpad:
+      image: cryptpad/cryptpad:latest
+      container_name: "{{ project_name }}_cryptpad"
+      restart: unless-stopped
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - CPAD_ADMIN_EMAIL={{ admin_email }}
+        - CPAD_HOST_NAME=localhost
+      volumes:
+        - cryptpad_data:/cryptpad/data
+        - cryptpad_blob:/cryptpad/blob
+        - cryptpad_block:/cryptpad/block
+        - cryptpad_customize:/cryptpad/customize
+      networks:
+        - cryptpad_network
+  
+  volumes:
+    cryptpad_data:
+      driver: local
+    cryptpad_blob:
+      driver: local
+    cryptpad_block:
+      driver: local
+    cryptpad_customize:
+      driver: local
+  
+  networks:
+    cryptpad_network:
+      driver: bridge

@@ -1,0 +1,95 @@
+template_info:
+  description: "NodeBB - Modern forum software"
+  version: "1.0"
+  services:
+    - nodebb
+    - mongo
+    - redis
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "4567"
+    required: true
+  
+  admin_username:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  admin_email:
+    type: string
+    description: "Admin email"
+    default: "admin@example.com"
+    required: true
+  
+  url:
+    type: string
+    description: "Site URL"
+    default: "http://localhost:4567"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    mongo:
+      image: mongo:5
+      container_name: "{{ project_name }}_mongo"
+      restart: unless-stopped
+      command: mongod --wiredTigerCacheSizeGB 1
+      volumes:
+        - mongo_data:/data/db
+      networks:
+        - nodebb_network
+    
+    redis:
+      image: redis:6
+      container_name: "{{ project_name }}_redis"
+      restart: unless-stopped
+      networks:
+        - nodebb_network
+    
+    nodebb:
+      image: nodebb/docker:latest
+      container_name: "{{ project_name }}_nodebb"
+      restart: unless-stopped
+      depends_on:
+        - mongo
+        - redis
+      ports:
+        - "{{ port }}:4567"
+      environment:
+        - NODEBB_URL={{ url }}
+        - NODEBB_PORT=4567
+        - NODEBB_DB=mongo
+        - NODEBB_DB_HOST=mongo
+        - NODEBB_DB_PORT=27017
+        - NODEBB_DB_NAME=nodebb
+        - NODEBB_ADMIN_USERNAME={{ admin_username }}
+        - NODEBB_ADMIN_PASSWORD={{ admin_password }}
+        - NODEBB_ADMIN_EMAIL={{ admin_email }}
+        - NODEBB_REDIS_HOST=redis
+        - NODEBB_REDIS_PORT=6379
+      volumes:
+        - nodebb_data:/usr/src/app/public/uploads
+      networks:
+        - nodebb_network
+  
+  volumes:
+    mongo_data:
+      driver: local
+    nodebb_data:
+      driver: local
+  
+  networks:
+    nodebb_network:
+      driver: bridge

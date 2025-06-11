@@ -1,0 +1,71 @@
+template_info:
+  description: "HedgeDoc - Collaborative markdown editor"
+  version: "1.0"
+  services:
+    - hedgedoc
+    - postgres
+
+fields:
+  port:
+    type: port
+    description: "Web interface port"
+    default: "3000"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+  
+  session_secret:
+    type: password
+    description: "Session secret"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    postgres:
+      image: postgres:13
+      container_name: "{{ project_name }}_postgres"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_PASSWORD={{ db_password }}
+        - POSTGRES_USER=hedgedoc
+        - POSTGRES_DB=hedgedoc
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - hedgedoc_network
+    
+    hedgedoc:
+      image: quay.io/hedgedoc/hedgedoc:latest
+      container_name: "{{ project_name }}_hedgedoc"
+      restart: unless-stopped
+      depends_on:
+        - postgres
+      ports:
+        - "{{ port }}:3000"
+      environment:
+        - CMD_DB_URL=postgres://hedgedoc:{{ db_password }}@postgres:5432/hedgedoc
+        - CMD_DOMAIN=localhost
+        - CMD_URL_ADDPORT=true
+        - CMD_PORT={{ port }}
+        - CMD_SESSION_SECRET={{ session_secret }}
+      volumes:
+        - hedgedoc_uploads:/hedgedoc/public/uploads
+      networks:
+        - hedgedoc_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+    hedgedoc_uploads:
+      driver: local
+  
+  networks:
+    hedgedoc_network:
+      driver: bridge

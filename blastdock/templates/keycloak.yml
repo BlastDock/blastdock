@@ -1,0 +1,82 @@
+template_info:
+  description: "Keycloak - Open source identity and access management"
+  version: "1.0"
+  services:
+    - keycloak
+    - postgresql
+
+fields:
+  http_port:
+    type: port
+    description: "HTTP port"
+    default: "8080"
+    required: true
+  
+  https_port:
+    type: port
+    description: "HTTPS port"
+    default: "8443"
+    required: true
+  
+  admin_user:
+    type: string
+    description: "Admin username"
+    default: "admin"
+    required: true
+  
+  admin_password:
+    type: password
+    description: "Admin password"
+    default: "auto"
+    required: true
+  
+  db_password:
+    type: password
+    description: "Database password"
+    default: "auto"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    keycloak:
+      image: quay.io/keycloak/keycloak:latest
+      container_name: "{{ project_name }}_keycloak"
+      restart: unless-stopped
+      ports:
+        - "{{ http_port }}:8080"
+        - "{{ https_port }}:8443"
+      environment:
+        - KEYCLOAK_ADMIN={{ admin_user }}
+        - KEYCLOAK_ADMIN_PASSWORD={{ admin_password }}
+        - KC_DB=postgres
+        - KC_DB_URL=jdbc:postgresql://postgresql:5432/keycloak
+        - KC_DB_USERNAME=keycloak
+        - KC_DB_PASSWORD={{ db_password }}
+      command: start-dev
+      depends_on:
+        - postgresql
+      networks:
+        - keycloak_network
+    
+    postgresql:
+      image: postgres:14-alpine
+      container_name: "{{ project_name }}_postgresql"
+      restart: unless-stopped
+      environment:
+        - POSTGRES_DB=keycloak
+        - POSTGRES_USER=keycloak
+        - POSTGRES_PASSWORD={{ db_password }}
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - keycloak_network
+  
+  volumes:
+    postgres_data:
+      driver: local
+  
+  networks:
+    keycloak_network:
+      driver: bridge

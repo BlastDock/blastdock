@@ -1,0 +1,51 @@
+template_info:
+  description: "Apache ZooKeeper - Distributed coordination service"
+  version: "1.0"
+  services:
+    - zookeeper
+
+fields:
+  client_port:
+    type: port
+    description: "Client connection port"
+    default: "2181"
+    required: true
+  
+  admin_port:
+    type: port
+    description: "Admin server port"
+    default: "8080"
+    required: true
+
+compose:
+  version: '3.8'
+  
+  services:
+    zookeeper:
+      image: zookeeper:latest
+      container_name: "{{ project_name }}_zookeeper"
+      restart: unless-stopped
+      ports:
+        - "{{ client_port }}:2181"
+        - "{{ admin_port }}:8080"
+      environment:
+        - ZOO_MY_ID=1
+        - ZOO_SERVERS=server.1=0.0.0.0:2888:3888;2181
+      volumes:
+        - zookeeper_data:/data
+        - zookeeper_datalog:/datalog
+        - zookeeper_logs:/logs
+      networks:
+        - zookeeper_network
+  
+  volumes:
+    zookeeper_data:
+      driver: local
+    zookeeper_datalog:
+      driver: local
+    zookeeper_logs:
+      driver: local
+  
+  networks:
+    zookeeper_network:
+      driver: bridge
