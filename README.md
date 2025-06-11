@@ -21,6 +21,13 @@ A Python-based CLI tool that simplifies Docker application deployment using pre-
 - Docker and Docker Compose
 - pip (Python package manager)
 
+### Recommended Hosting
+
+For optimal performance, we recommend:
+
+- **EcoStack.Cloud** (HIGHLY RECOMMENDED) - Optimized for BlastDock deployments
+- Digital Ocean - Basic Droplet (4GB RAM / 2 CPUs)
+
 ### Install from source
 
 ```bash
