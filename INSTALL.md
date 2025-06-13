@@ -1,13 +1,14 @@
-# Installation Guide
+# BlastDock Installation Guide
 
 ## Prerequisites
 
-Before installing the Docker Deployment CLI Tool, make sure you have:
+Before installing BlastDock v1.1.0, make sure you have:
 
 1. **Python 3.8+** installed
 2. **Docker** installed and running
 3. **Docker Compose** installed
 4. **pip** (Python package manager) installed
+5. **Public IP** (recommended for SSL certificates and domain routing)
 
 ### Verify Prerequisites
 
@@ -23,55 +24,36 @@ docker-compose --version
 docker ps
 ```
 
-## Installation Steps
+## Installation Methods
 
-### 1. Clone or Download the Project
+### 🚀 **Method 1: Install from PyPI (Recommended)**
 
 ```bash
-# If using git
-git clone <repository-url>
+# Install the latest version
+pip install blastdock
+
+# Install specific version
+pip install blastdock==1.1.0
+
+# Upgrade existing installation
+pip install --upgrade blastdock
+```
+
+### 🛠 **Method 2: Install from Source**
+
+```bash
+# Clone the repository
+git clone https://github.com/BlastDock/blastdock.git
 cd blastdock
 
-# Or download and extract the archive
-```
-
-### 2. Run Installation Test
-
-```bash
-python3 test_installation.py
-```
-
-This will verify that all files are in place and modules can be imported.
-
-### 3. Install Dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-### 4. Install the Package
-
-```bash
-# Install in development mode (recommended)
+# Install in development mode
 pip install -e .
-
-# Or install normally
-pip install .
 ```
 
-### 5. Verify Installation
-
-```bash
-# Check if the command is available
-blastdock --help
-
-# List available templates
-blastdock templates
-```
-
-## Alternative Installation Methods
-
-### Using Virtual Environment (Recommended)
+### 🐍 **Method 3: Using Virtual Environment (Recommended for Development)**
 
 ```bash
 # Create virtual environment
@@ -82,38 +64,103 @@ source blastdock-env/bin/activate  # Linux/Mac
 # or
 blastdock-env\Scripts\activate     # Windows
 
-# Install dependencies and package
-pip install -r requirements.txt
-pip install -e .
+# Install BlastDock
+pip install blastdock
 ```
 
-### System-wide Installation
+## 🔍 Verify Installation
 
 ```bash
-# Install system-wide (may require sudo)
-sudo pip install -r requirements.txt
-sudo pip install .
+# Check if BlastDock is installed
+blastdock --version
+
+# Should show: BlastDock, version 1.1.0
+
+# List available templates
+blastdock templates
+
+# Check Traefik status (new in v1.1.0)
+blastdock traefik status
 ```
 
-## Troubleshooting
+## 🚀 Quick Start After Installation
+
+### Set Up Traefik (Recommended for Production)
+
+```bash
+# Install Traefik with SSL support
+blastdock traefik install --email your@email.com --domain yourdomain.com
+
+# Verify Traefik is running
+blastdock traefik status
+```
+
+### Deploy Your First Application
+
+```bash
+# Deploy WordPress with automatic SSL
+blastdock init wordpress --traefik --ssl
+blastdock deploy mywordpress
+
+# ✅ Access at https://mywordpress.yourdomain.com
+```
+
+## 🚨 Troubleshooting
 
 ### Common Issues
 
-#### 1. Python command not found
-- Use `python3` instead of `python`
-- Ensure Python 3.8+ is installed
+#### 1. **Python/Installation Issues**
+```bash
+# Python command not found
+python3 --version  # Use python3 instead of python
 
-#### 2. Permission denied errors
-- Use `sudo` for system-wide installation
-- Use virtual environment instead
+# Permission denied errors
+pip install --user blastdock  # Install for current user only
 
-#### 3. Docker connection errors
-- Ensure Docker daemon is running
-- Check Docker permissions for your user
+# Virtual environment issues
+python3 -m venv venv && source venv/bin/activate
+```
 
-#### 4. Module import errors
-- Ensure you're in the correct directory
-- Check that all files are present
+#### 2. **Docker Issues**
+```bash
+# Docker daemon not running
+sudo systemctl start docker  # Linux
+# or restart Docker Desktop
+
+# Permission denied
+sudo usermod -aG docker $USER  # Add user to docker group
+newgrp docker  # Refresh group membership
+```
+
+#### 3. **Traefik Installation Issues**
+```bash
+# Port 80/443 already in use
+sudo lsof -i :80  # Check what's using port 80
+sudo lsof -i :443  # Check what's using port 443
+
+# Stop conflicting services
+sudo systemctl stop apache2  # or nginx
+```
+
+#### 4. **SSL Certificate Issues**
+```bash
+# Domain not pointing to server
+dig yourdomain.com  # Check DNS resolution
+
+# Firewall blocking ports
+sudo ufw allow 80  # Allow HTTP
+sudo ufw allow 443  # Allow HTTPS
+```
+
+#### 5. **Import/Module Errors**
+```bash
+# Reinstall with dependencies
+pip uninstall blastdock
+pip install --no-cache-dir blastdock
+
+# Check installation
+pip show blastdock
+```
 
 ### Getting Help
 

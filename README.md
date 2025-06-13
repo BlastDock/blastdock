@@ -1,17 +1,29 @@
 # BlastDock - Docker Deployment CLI Tool
 
+[![PyPI version](https://badge.fury.io/py/blastdock.svg)](https://badge.fury.io/py/blastdock)
 [![Website](https://img.shields.io/badge/Website-blastdock.com-blue)](https://blastdock.com)
 [![GitHub](https://img.shields.io/badge/GitHub-BlastDock%2Fblastdock-black)](https://github.com/BlastDock/blastdock)
 
-A Python-based CLI tool that simplifies Docker application deployment using pre-built templates. The tool handles template customization, Docker Compose generation, deployment, and basic monitoring.
+A powerful Python-based CLI tool that simplifies Docker application deployment with comprehensive Traefik reverse proxy integration, automatic SSL certificate management, and intelligent domain routing. Deploy applications with zero-conflict domain management and production-ready SSL certificates in minutes.
 
 ## Features
 
-- **Template System**: Built-in templates for popular applications (WordPress, n8n, MySQL, PostgreSQL, Redis, Nginx)
-- **Interactive Configuration**: Guided setup with validation
-- **Deployment Management**: Easy deploy, stop, remove operations
-- **Monitoring**: Status checking and log viewing
-- **Safety Features**: Confirmation prompts and validation
+### 🚀 **New in v1.1.0 - Comprehensive Traefik Integration**
+
+- **🔄 Automatic Reverse Proxy**: Traefik integration with auto-installation and configuration
+- **🌐 Smart Domain Management**: Automatic subdomain generation and custom domain support  
+- **🔒 SSL Automation**: Let's Encrypt certificates with automatic renewal
+- **⚡ Zero-Conflict Deployment**: Intelligent port allocation and conflict detection
+- **🔧 Migration Tools**: Seamless migration of existing deployments to Traefik
+- **📊 Advanced Monitoring**: SSL certificate status and domain health checks
+
+### 📦 **Core Features**
+
+- **Template System**: 100+ built-in templates for popular applications
+- **Interactive Configuration**: Guided setup with comprehensive validation
+- **Deployment Management**: Deploy, stop, remove operations with safety checks
+- **Monitoring**: Real-time status checking and log streaming
+- **Safety Features**: Confirmation prompts, input validation, and rollback capabilities
 
 ## Installation
 
@@ -21,14 +33,20 @@ A Python-based CLI tool that simplifies Docker application deployment using pre-
 - Docker and Docker Compose
 - pip (Python package manager)
 
-### Recommended Hosting
+### 📦 **Install from PyPI (Recommended)**
 
-For optimal performance, we recommend:
+```bash
+# Install the latest version
+pip install blastdock
 
-- **EcoStack.Cloud** (HIGHLY RECOMMENDED) - Optimized for BlastDock deployments
-- Digital Ocean - Basic Droplet (4GB RAM / 2 CPUs)
+# Install specific version
+pip install blastdock==1.1.0
 
-### Install from source
+# Upgrade existing installation
+pip install --upgrade blastdock
+```
+
+### 🛠 **Install from Source**
 
 ```bash
 git clone https://github.com/BlastDock/blastdock.git
@@ -37,89 +55,157 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+### 🌐 **Recommended Hosting**
+
+For optimal performance, we recommend:
+
+- **EcoStack.Cloud** (HIGHLY RECOMMENDED) - Optimized for BlastDock deployments
+- Digital Ocean - Basic Droplet (4GB RAM / 2 CPUs)
+- Any VPS with Docker support and public IP for SSL certificates
+
 ## Quick Start
 
-### 1. List available templates
+### 🚀 **Option 1: Deploy with Traefik (Recommended for Production)**
+
 ```bash
+# 1. Install Traefik with SSL support
+blastdock traefik install --email your@email.com --domain yourdomain.com
+
+# 2. List available templates
 blastdock templates
-```
 
-### 2. Initialize a new project
-```bash
-blastdock init wordpress
-```
+# 3. Initialize project with Traefik integration
+blastdock init wordpress --traefik --ssl
 
-### 3. Deploy the application
-```bash
+# 4. Deploy with automatic SSL and domain routing
 blastdock deploy mywordpress
+
+# 5. Access at https://mywordpress.yourdomain.com (SSL automatic!)
 ```
 
-### 4. Check status
+### 🛠 **Option 2: Traditional Port-Based Deployment**
+
 ```bash
+# 1. List available templates
+blastdock templates
+
+# 2. Initialize a new project
+blastdock init wordpress --no-traefik
+
+# 3. Deploy the application
+blastdock deploy mywordpress
+
+# 4. Check status
 blastdock status mywordpress
-```
 
-### 5. View logs
-```bash
+# 5. View logs
 blastdock logs mywordpress
 ```
 
 ## Commands
 
-### Project Management
-- `blastdock init <template>` - Initialize new deployment
-- `blastdock deploy <project>` - Deploy application
+### 🎯 **Project Management**
+- `blastdock init <template>` - Initialize new deployment with Traefik options
+- `blastdock deploy <project>` - Deploy application with SSL and domain routing
 - `blastdock stop <project>` - Stop deployment
-- `blastdock remove <project>` - Remove deployment
-- `blastdock list` - List all deployments
+- `blastdock remove <project>` - Remove deployment and clean up domains
+- `blastdock list` - List all deployments with status
 - `blastdock config <project>` - Show project configuration details
 
-### Monitoring
-- `blastdock status <project>` - Check deployment status
+### 🔄 **Traefik Management**
+- `blastdock traefik install` - Install Traefik with Let's Encrypt
+- `blastdock traefik status` - Show Traefik status and certificate info
+- `blastdock traefik restart` - Restart Traefik service
+- `blastdock traefik logs` - View Traefik logs
+- `blastdock traefik dashboard` - Open Traefik dashboard
+- `blastdock traefik remove` - Remove Traefik installation
+
+### 🌐 **Domain Management**
+- `blastdock domain list` - List all used domains and subdomains
+- `blastdock domain check <domain>` - Check domain availability and DNS
+- `blastdock domain set-default <domain>` - Set default domain for deployments
+
+### 🔌 **Port Management**
+- `blastdock ports list` - Show all port allocations and conflicts
+- `blastdock ports conflicts` - Check for port conflicts
+- `blastdock ports reserve <port>` - Reserve a specific port
+- `blastdock ports release <port>` - Release a reserved port
+
+### 🔧 **Migration Tools**
+- `blastdock migrate to-traefik [project]` - Migrate project(s) to Traefik
+- `blastdock migrate rollback <project>` - Rollback Traefik migration
+
+### 🔒 **SSL Certificate Management**
+- `blastdock ssl status` - Show SSL certificate status for all domains
+- `blastdock ssl renew <domain>` - Force certificate renewal
+- `blastdock ssl test <domain>` - Test SSL configuration
+
+### 📊 **Monitoring**
+- `blastdock status <project>` - Check deployment status with domain info
 - `blastdock logs <project>` - View logs
 - `blastdock logs <project> -f` - Follow logs
 - `blastdock logs <project> -s <service>` - View specific service logs
 
-### Templates
-- `blastdock templates` - List available templates
+### 📋 **Templates**
+- `blastdock templates` - List 100+ available templates
 
-## Available Templates
+## 📋 Available Templates
 
-### WordPress
-Complete WordPress installation with MySQL database.
-- Configurable ports
-- Auto-generated database credentials
-- Persistent data storage
+BlastDock includes **100+ production-ready templates** for popular applications:
 
-### n8n
-Workflow automation tool.
-- Web interface on configurable port
-- Persistent workflow storage
-- Timezone configuration
+### 🌐 **Web Applications**
+- **WordPress** - Complete blog/CMS with MySQL
+- **Ghost** - Modern publishing platform
+- **Drupal** - Enterprise content management
+- **Joomla** - Flexible CMS platform
+- **NextCloud** - Self-hosted cloud storage
+- **WikiJS** - Modern wiki software
 
-### MySQL
-Standalone MySQL database server.
-- Configurable port and credentials
-- Optional initial database creation
-- Persistent data storage
+### 🔧 **Development Tools**
+- **GitLab** - Complete DevOps platform
+- **Gitea** - Lightweight Git service
+- **Jenkins** - CI/CD automation
+- **Drone** - Modern CI platform
+- **SonarQube** - Code quality analysis
 
-### PostgreSQL
-PostgreSQL database server.
-- Configurable port and credentials
-- Initial database setup
-- Persistent data storage
+### 📊 **Databases**
+- **MySQL** - Popular relational database
+- **PostgreSQL** - Advanced SQL database  
+- **MongoDB** - NoSQL document database
+- **Redis** - In-memory data store
+- **InfluxDB** - Time series database
+- **CockroachDB** - Distributed SQL
 
-### Redis
-Redis cache server.
-- Configurable port and password
-- Memory limits and policies
-- Persistent data storage
+### 📈 **Monitoring & Analytics**
+- **Grafana** - Data visualization
+- **Prometheus** - Metrics collection
+- **Metabase** - Business intelligence
+- **Matomo** - Privacy-focused analytics
+- **Plausible** - Simple web analytics
 
-### Nginx
-Web server with basic configuration.
-- HTTP/HTTPS ports
-- Configurable server name
-- Sample configuration files
+### 💬 **Communication**
+- **Mattermost** - Team messaging
+- **Rocket.Chat** - Team collaboration
+- **Discord** - Community platform
+- **Matrix** - Decentralized chat
+
+### 🎮 **Media & Entertainment**
+- **Jellyfin** - Media streaming
+- **Plex** - Media organization
+- **Airsonic** - Music streaming
+- **PhotoPrism** - Photo management
+
+### ⚙️ **All Templates Support:**
+- 🔄 **Traefik Integration** - Automatic reverse proxy setup
+- 🔒 **SSL Certificates** - Let's Encrypt automation
+- 🌐 **Custom Domains** - Your domain or auto-generated subdomains
+- 📦 **One-Click Deploy** - Production-ready in minutes
+- 🔧 **Easy Migration** - Upgrade existing deployments
+
+View all templates:
+```bash
+blastdock templates
+```
 
 ## Project Structure
 
@@ -153,27 +239,29 @@ Each project gets its own `.env` file with configuration variables.
 ### Global Configuration
 Global settings are stored in `~/.blastdock/config.yml`.
 
-## Examples
+## 🚀 Examples
 
-### WordPress Blog
+### 🌐 **Production WordPress with SSL**
 ```bash
-# Initialize WordPress project
-blastdock init wordpress -i
-# Enter project name: myblog
-# Enter domain: myblog.local
-# Enter WordPress port: 8080
-# Auto-generate passwords? Yes
+# Install Traefik with your domain
+blastdock traefik install --email admin@yourdomain.com --domain yourdomain.com
 
-# Deploy
+# Initialize WordPress with Traefik integration
+blastdock init wordpress --traefik --ssl
+# Enter project name: myblog
+# Auto-generated subdomain: myblog.yourdomain.com
+# SSL certificates: Enabled
+
+# Deploy with automatic SSL
 blastdock deploy myblog
 
-# Access at http://localhost:8080
+# ✅ Access at https://myblog.yourdomain.com (SSL automatic!)
 ```
 
-### Development Database
+### 🔧 **Development Environment**
 ```bash
-# Initialize MySQL for development
-blastdock init mysql
+# Initialize MySQL for development (no Traefik)
+blastdock init mysql --no-traefik
 # Enter project name: devdb
 # Enter MySQL port: 3306
 # Auto-generate root password
@@ -184,21 +272,73 @@ blastdock deploy devdb
 # Connect to MySQL on localhost:3306
 ```
 
-## Safety Features
+### 📊 **Full-Stack Application**
+```bash
+# Deploy multiple services with domain routing
+blastdock init nextcloud --traefik --domain cloud.yourdomain.com
+blastdock init grafana --traefik --subdomain monitoring
+blastdock init redis --traefik --subdomain cache
 
-- Port conflict detection
-- Confirmation prompts for destructive operations
-- Input validation
-- Auto-generated secure passwords
-- Project isolation
+# Deploy all services
+blastdock deploy nextcloud
+blastdock deploy grafana  
+blastdock deploy redis
 
-## Error Handling
+# Access:
+# ✅ https://cloud.yourdomain.com (NextCloud)
+# ✅ https://monitoring.yourdomain.com (Grafana)
+# ✅ https://cache.yourdomain.com (Redis)
+```
 
-The tool provides clear error messages and suggestions:
-- Docker connection issues
-- Port conflicts
-- Invalid configurations
-- Missing dependencies
+### 🔄 **Migrate Existing Project**
+```bash
+# Check migration compatibility
+blastdock migrate to-traefik
+
+# Migrate specific project to Traefik
+blastdock migrate to-traefik myproject --ssl
+
+# Migrate all compatible projects
+blastdock migrate to-traefik --all
+```
+
+## 🛡️ Safety Features
+
+### 🔒 **Security & Validation**
+- **Port Conflict Detection** - Automatic detection and resolution
+- **Domain Validation** - DNS checking and availability verification
+- **SSL Certificate Monitoring** - Automatic renewal and health checks
+- **Input Validation** - Comprehensive validation for all user inputs
+- **Auto-Generated Secure Passwords** - Cryptographically secure defaults
+
+### 🔄 **Operational Safety**
+- **Confirmation Prompts** - Interactive confirmations for destructive operations
+- **Project Isolation** - Complete separation between deployments
+- **Backup & Rollback** - Migration backup and rollback capabilities
+- **Dry Run Mode** - Test migrations without making changes
+- **Health Checks** - Automatic service health monitoring
+
+## 🚨 Advanced Error Handling
+
+BlastDock provides intelligent error detection and resolution:
+
+### 🔧 **Infrastructure Issues**
+- **Docker Connection** - Automatic Docker daemon detection and suggestions
+- **Port Conflicts** - Smart port allocation with conflict resolution
+- **Network Issues** - DNS and connectivity troubleshooting
+- **SSL Problems** - Certificate validation and renewal guidance
+
+### ⚙️ **Configuration Issues**
+- **Invalid Configurations** - Detailed validation with suggestions
+- **Missing Dependencies** - Automatic dependency checking
+- **Template Errors** - Template validation and syntax checking
+- **Domain Problems** - DNS propagation and SSL certificate issues
+
+### 📋 **Detailed Diagnostics**
+- **Comprehensive Logs** - Structured logging with context
+- **Health Checks** - Service-level health monitoring
+- **Migration Validation** - Pre-migration compatibility checks
+- **Recovery Suggestions** - Actionable steps for problem resolution
 
 ## Development
 

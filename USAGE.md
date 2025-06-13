@@ -1,96 +1,214 @@
-# Docker Deployment CLI Tool - Usage Guide
+# BlastDock v1.1.0 - Complete Usage Guide
 
-## Quick Start with Virtual Environment
+## 🚀 Quick Start Guide
 
-Since you're on a system with externally-managed Python packages, follow these steps:
+### Option 1: Production Setup with Traefik + SSL
 
-### 1. Activate the Virtual Environment
-
-```bash
-source blastdock-env/bin/activate
-```
-
-Your prompt should change to show `(blastdock-env)` indicating the virtual environment is active.
-
-### 2. Verify Installation
+Perfect for production deployments with automatic SSL certificates and domain routing.
 
 ```bash
-blastdock --help
-blastdock templates
-```
+# 1. Install Traefik with your domain
+blastdock traefik install --email admin@yourdomain.com --domain yourdomain.com
 
-### 3. Create Your First Project
-
-```bash
-# Initialize a MySQL database
-blastdock init mysql
-# Enter project name: mydb
-
-# Deploy it
-blastdock deploy mydb
-
-# Check status
-blastdock status mydb
-
-# View logs
-blastdock logs mydb
-```
-
-### 4. Try WordPress
-
-```bash
-# Initialize WordPress with MySQL
-blastdock init wordpress
-# Enter project name: myblog
-
-# Deploy it
+# 2. Deploy WordPress with automatic SSL
+blastdock init wordpress --traefik --ssl --name myblog
 blastdock deploy myblog
 
-# Access at http://localhost:8080 (or your configured port)
+# ✅ Access at https://myblog.yourdomain.com (SSL automatic!)
 ```
 
-### 5. Management Commands
+### Option 2: Development Setup (Traditional Ports)
+
+Great for local development and testing.
 
 ```bash
-# List all projects
-blastdock list
+# 1. Deploy MySQL database
+blastdock init mysql --no-traefik --name devdb
+blastdock deploy devdb
 
-# Stop a project
-blastdock stop mydb
-
-# Remove a project (destructive!)
-blastdock remove mydb
-
-# View logs in real-time
-blastdock logs myblog -f
+# 2. Connect at localhost:3306 with generated credentials
+blastdock status devdb  # Shows credentials and status
 ```
 
-## Deactivating Virtual Environment
+## 📋 Complete Command Reference
 
-When you're done, deactivate the virtual environment:
+### 🎯 **Project Management**
 
 ```bash
-deactivate
+# Initialize new project with options
+blastdock init <template> [OPTIONS]
+  --traefik/--no-traefik    # Enable/disable Traefik integration
+  --ssl/--no-ssl            # Enable/disable SSL certificates
+  --domain <domain>         # Custom domain (e.g., app.yourdomain.com)
+  --subdomain <subdomain>   # Custom subdomain (e.g., app)
+  --name <name>             # Project name
+  --interactive, -i         # Interactive mode
+
+# Deploy project
+blastdock deploy <project>
+
+# Project status and monitoring
+blastdock status <project>     # Detailed status with domain info
+blastdock logs <project>       # View logs
+blastdock logs <project> -f    # Follow logs real-time
+blastdock logs <project> -s <service>  # Specific service logs
+
+# Project lifecycle
+blastdock stop <project>       # Stop project
+blastdock remove <project>     # Remove project (with confirmation)
+blastdock list                 # List all projects
+blastdock config <project>     # Show project configuration
 ```
 
-## Reactivating Later
-
-To use blastdock again in a new terminal session:
+### 🔄 **Traefik Management**
 
 ```bash
-cd /path/to/blastdock
-source blastdock-env/bin/activate
-blastdock list
+# Install and configure Traefik
+blastdock traefik install --email <email> --domain <domain>
+  --dashboard/--no-dashboard    # Enable/disable dashboard
+  --dashboard-domain <domain>   # Custom dashboard domain
+
+# Traefik operations
+blastdock traefik status       # Show status and certificate info
+blastdock traefik logs         # View Traefik logs
+blastdock traefik logs -f      # Follow Traefik logs
+blastdock traefik restart      # Restart Traefik
+blastdock traefik dashboard    # Open dashboard in browser
+blastdock traefik remove       # Remove Traefik (with confirmation)
 ```
 
-## Available Templates
+### 🌐 **Domain Management**
 
-- **mysql** - Standalone MySQL database (port 3306)
-- **postgresql** - PostgreSQL database (port 5432)
-- **redis** - Redis cache server (port 6379)
-- **nginx** - Web server (ports 80/443)
-- **wordpress** - WordPress + MySQL (port 8080)
-- **n8n** - Workflow automation (port 5678)
+```bash
+# Domain operations
+blastdock domain list                    # List all domains/subdomains
+blastdock domain check <domain>          # Check domain status and DNS
+blastdock domain set-default <domain>    # Set default domain for new projects
+```
+
+### 🔌 **Port Management**
+
+```bash
+# Port operations
+blastdock ports list           # Show all port allocations
+blastdock ports conflicts      # Check for port conflicts
+blastdock ports reserve <port> # Reserve specific port
+blastdock ports release <port> # Release reserved port
+```
+
+### 🔒 **SSL Certificate Management**
+
+```bash
+# SSL operations
+blastdock ssl status           # Show all SSL certificate status
+blastdock ssl renew <domain>   # Force certificate renewal
+blastdock ssl test <domain>    # Test SSL configuration
+```
+
+### 🔧 **Migration Tools**
+
+```bash
+# Migration operations
+blastdock migrate to-traefik                    # Show migration compatibility
+blastdock migrate to-traefik <project>          # Migrate specific project
+blastdock migrate to-traefik --all              # Migrate all compatible projects
+blastdock migrate to-traefik <project> --dry-run # Test migration
+blastdock migrate rollback <project>            # Rollback migration
+```
+
+## 📚 Real-World Examples
+
+### 🌐 **Production WordPress Site**
+
+```bash
+# 1. Set up Traefik with your domain
+blastdock traefik install --email admin@mybusiness.com --domain mybusiness.com
+
+# 2. Deploy WordPress with SSL
+blastdock init wordpress --traefik --ssl --domain www.mybusiness.com
+blastdock deploy wordpress-site
+
+# 3. Deploy additional services with subdomains
+blastdock init grafana --traefik --ssl --subdomain monitoring
+blastdock deploy monitoring
+
+# ✅ Access:
+# https://www.mybusiness.com (WordPress)
+# https://monitoring.mybusiness.com (Grafana)
+```
+
+### 🔧 **Development Environment**
+
+```bash
+# 1. Set up databases for development
+blastdock init mysql --no-traefik --name devdb
+blastdock init redis --no-traefik --name cache
+blastdock init postgres --no-traefik --name pgdb
+
+# 2. Deploy all services
+blastdock deploy devdb
+blastdock deploy cache  
+blastdock deploy pgdb
+
+# 3. Connect to services
+# MySQL: localhost:3306
+# Redis: localhost:6379
+# PostgreSQL: localhost:5432
+```
+
+### 📊 **Monitoring Stack**
+
+```bash
+# 1. Deploy monitoring services with Traefik
+blastdock init grafana --traefik --ssl --subdomain grafana
+blastdock init prometheus --traefik --ssl --subdomain metrics
+blastdock init loki --traefik --ssl --subdomain logs
+
+# 2. Deploy all services
+blastdock deploy grafana
+blastdock deploy prometheus
+blastdock deploy loki
+
+# ✅ Access with SSL:
+# https://grafana.yourdomain.com
+# https://metrics.yourdomain.com  
+# https://logs.yourdomain.com
+```
+
+### 🔄 **Migrating Existing Projects**
+
+```bash
+# 1. Check what can be migrated
+blastdock migrate to-traefik
+
+# 2. Test migration (dry run)
+blastdock migrate to-traefik myproject --dry-run
+
+# 3. Perform migration with SSL
+blastdock migrate to-traefik myproject --ssl
+
+# 4. Rollback if needed
+blastdock migrate rollback myproject
+```
+
+## 📋 **Available Templates (100+)**
+
+### Popular Templates:
+- **wordpress** - WordPress + MySQL with SSL support
+- **nextcloud** - Self-hosted cloud storage
+- **grafana** - Data visualization and monitoring
+- **mysql/postgresql** - Database servers
+- **redis** - In-memory data store  
+- **nginx** - Web server and reverse proxy
+- **gitlab** - Complete DevOps platform
+- **jenkins** - CI/CD automation
+- **mattermost** - Team communication
+- **jellyfin** - Media streaming server
+
+View all available templates:
+```bash
+blastdock templates
+```
 
 ## Example Projects
 
