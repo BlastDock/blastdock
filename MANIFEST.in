@@ -1,0 +1,24 @@
+include README.md
+include LICENSE
+include INSTALL.md
+include USAGE.md
+include requirements.txt
+include pyproject.toml
+
+recursive-include blastdock/templates *.yml *.yaml
+recursive-include blastdock/templates *.json
+
+exclude *.pyc
+exclude */__pycache__/*
+exclude .git*
+exclude .DS_Store
+exclude *.egg-info
+exclude build/*
+exclude dist/*
+exclude venv/*
+exclude blastdock-env/*
+exclude deploys/*
+exclude .pytest_cache/*
+exclude .mypy_cache/*
+exclude .coverage
+exclude .tox/*

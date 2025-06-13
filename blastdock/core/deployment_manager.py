@@ -127,6 +127,21 @@ class DeploymentManager:
                 pass
         return 'unknown'
     
+    def get_project_config(self, project_name):
+        """Get project configuration"""
+        metadata = self.get_project_metadata(project_name)
+        config = metadata.get('config', {})
+        
+        # Add additional metadata
+        enhanced_config = {
+            'project_name': project_name,
+            'template': metadata.get('template', 'unknown'),
+            'created': metadata.get('created', 'unknown'),
+            'config': config
+        }
+        
+        return enhanced_config
+    
     def deploy(self, project_name):
         """Deploy a project"""
         if not self.project_exists(project_name):
@@ -160,19 +175,29 @@ class DeploymentManager:
         
         return output
     
-    def remove(self, project_name):
+    def remove(self, project_name, keep_data=False):
         """Remove a project"""
         if not self.project_exists(project_name):
             raise Exception(f"Project '{project_name}' not found")
         
-        # Stop containers first
+        project_path = get_project_path(project_name)
+        
+        # Stop and remove containers 
         try:
-            self.stop(project_name)
+            if keep_data:
+                # Use docker-compose down (keeps volumes)
+                success, output = self.docker_client.compose_down(project_path, project_name)
+                if not success:
+                    raise Exception(f"Failed to stop containers: {output}")
+            else:
+                # Use docker-compose down --volumes (removes volumes too)
+                success, output = self.docker_client.compose_down_with_volumes(project_path, project_name)
+                if not success:
+                    raise Exception(f"Failed to stop containers and remove volumes: {output}")
         except Exception:
             pass  # Continue even if stop fails
         
         # Remove project directory
-        project_path = get_project_path(project_name)
         shutil.rmtree(project_path)
         
         return f"Project '{project_name}' removed"

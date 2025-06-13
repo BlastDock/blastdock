@@ -138,3 +138,17 @@ class Monitor:
         
         except Exception as e:
             return False, f"Health check failed: {str(e)}"
+    
+    def get_logs(self, project_name, service=None, tail=50):
+        """Get logs for a project"""
+        if not self.deployment_manager.project_exists(project_name):
+            raise Exception(f"Project '{project_name}' not found")
+        
+        return self.deployment_manager.show_logs(project_name, follow=False, service=service)
+    
+    def follow_logs(self, project_name, service=None):
+        """Follow logs for a project"""
+        if not self.deployment_manager.project_exists(project_name):
+            raise Exception(f"Project '{project_name}' not found")
+        
+        return self.deployment_manager.show_logs(project_name, follow=True, service=service)

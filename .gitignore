@@ -82,3 +82,6 @@ docs/api/
 .env.development.local
 .env.test.local
 .env.production.local
+
+test_env/
+test_install_env/

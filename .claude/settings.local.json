@@ -8,7 +8,14 @@
       "Bash(ls:*)",
       "Bash(source:*)",
       "Bash(pip install:*)",
-      "Bash(blastdock:*)"
+      "Bash(blastdock:*)",
+      "Bash(python:*)",
+      "Bash(pip3 install:*)",
+      "Bash(rm:*)",
+      "Bash(twine check:*)",
+      "Bash(twine upload:*)",
+      "Bash(grep:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
