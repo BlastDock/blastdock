@@ -291,3 +291,85 @@ class TraefikIntegrator:
                 service['ports'] = filtered_ports
             else:
                 del service['ports']
+    def _enable_traefik_for_service(self, service_config, service_name, project_name, user_config, port):
+        """Enable Traefik for a specific service"""
+        if not self._should_enable_traefik(service_config):
+            return service_config
+        
+        # Add Traefik labels
+        labels = self._generate_traefik_labels(service_name, project_name, user_config, port)
+        service_config = service_config.copy()
+        service_config.setdefault('labels', {}).update(labels)
+        
+        return service_config
+    
+    def _add_traefik_network(self, compose_data):
+        """Add Traefik network to compose data"""
+        compose_data = compose_data.copy()
+        
+        # Add networks section
+        compose_data.setdefault('networks', {})['traefik'] = {
+            'external': True
+        }
+        
+        # Add network to all services
+        for service_name, service_config in compose_data.get('services', {}).items():
+            service_config.setdefault('networks', []).append('traefik')
+        
+        return compose_data
+    
+    def _generate_traefik_labels(self, service_name, project_name, config, port):
+        """Generate Traefik labels for a service"""
+        domain = self._get_service_domain(project_name, service_name, config)
+        
+        labels = {
+            'traefik.enable': 'true',
+            f'traefik.http.routers.{project_name}-{service_name}.rule': f'Host(`{domain}`)',
+            f'traefik.http.services.{project_name}-{service_name}.loadbalancer.server.port': str(port)
+        }
+        
+        # Add SSL labels if enabled
+        if config.get('ssl_enabled', True):
+            labels.update(self._generate_ssl_labels(service_name, config))
+        
+        return labels
+    
+    def _should_enable_traefik(self, service_config):
+        """Check if Traefik should be enabled for this service"""
+        # Enable Traefik if service has ports exposed
+        return 'ports' in service_config and len(service_config['ports']) > 0
+    
+    def _extract_port_from_service(self, service_config):
+        """Extract port from service configuration"""
+        ports = service_config.get('ports', [])
+        if not ports:
+            return None
+        
+        # Get first port mapping
+        port_mapping = str(ports[0])
+        if ':' in port_mapping:
+            # Format: "8080:80" -> return 80 (container port)
+            return int(port_mapping.split(':')[1])
+        else:
+            # Format: "80" -> return 80
+            return int(port_mapping)
+    
+    def _get_service_domain(self, project_name, service_name, config):
+        """Get domain for a service"""
+        if 'domain' in config:
+            return config['domain']
+        elif 'subdomain' in config:
+            return f"{config['subdomain']}.localhost"
+        else:
+            return f"{project_name}-{service_name}.localhost"
+    
+    def _generate_ssl_labels(self, service_name, config):
+        """Generate SSL labels"""
+        if not config.get('ssl_enabled', False):
+            return {}
+        
+        return {
+            f'traefik.http.routers.{service_name}.tls': 'true',
+            f'traefik.http.routers.{service_name}.tls.certresolver': 'letsencrypt'
+        }
+

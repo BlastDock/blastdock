@@ -259,3 +259,64 @@ class DeploymentManager:
         # Default to enabled if template is Traefik compatible
         template_info = template_data.get('template_info', {})
         return template_info.get('traefik_compatible', False)
+    def _create_project_directory(self, project_name):
+        """Create project directory"""
+        from pathlib import Path
+        import os
+        
+        config = self._get_config()
+        projects_dir = getattr(config, 'projects_dir', os.path.expanduser('~/blastdock/projects'))
+        project_dir = Path(projects_dir) / project_name
+        project_dir.mkdir(parents=True, exist_ok=True)
+        return project_dir
+    
+    def _write_compose_file(self, compose_data, project_dir):
+        """Write docker-compose.yml file"""
+        import yaml
+        
+        compose_file = project_dir / 'docker-compose.yml'
+        with open(compose_file, 'w') as f:
+            yaml.dump(compose_data, f, default_flow_style=False)
+        return True
+    
+    def _write_env_file(self, env_vars, project_dir):
+        """Write .env file"""
+        env_file = project_dir / '.env'
+        with open(env_file, 'w') as f:
+            for key, value in env_vars.items():
+                f.write(f"{key}={value}\n")
+        return True
+    
+    def _run_docker_compose(self, project_dir, project_name):
+        """Run docker-compose up"""
+        import subprocess
+        
+        try:
+            result = subprocess.run([
+                'docker-compose', '-p', project_name, 'up', '-d'
+            ], cwd=project_dir, capture_output=True, text=True)
+            
+            return {
+                'success': result.returncode == 0,
+                'output': result.stdout,
+                'error': result.stderr if result.returncode != 0 else None
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def _validate_project_name(self, name):
+        """Validate project name"""
+        import re
+        return bool(re.match(r'^[a-z0-9-]+$', name)) and len(name) > 0
+    
+    def _get_config(self):
+        """Get configuration"""
+        try:
+            from .config import get_config
+            return get_config()
+        except:
+            # Fallback mock config
+            class MockConfig:
+                projects_dir = "~/blastdock/projects"
+            return MockConfig()
+
