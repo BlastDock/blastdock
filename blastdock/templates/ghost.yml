@@ -1,82 +1,107 @@
-template_info:
-  description: "Ghost - Professional publishing platform"
-  version: "1.0"
-  services:
-    - ghost
-    - mysql
-
-fields:
-  http_port:
-    type: port
-    description: "HTTP port"
-    default: "2368"
-    required: true
-  
-  site_url:
-    type: domain
-    description: "Site URL"
-    default: "localhost"
-    required: true
-  
-  mysql_password:
-    type: password
-    description: "MySQL password"
-    default: "auto"
-    required: true
-  
-  email:
-    type: email
-    description: "Admin email"
-    default: "admin@example.com"
-    required: true
-
 compose:
-  version: '3.8'
-  
+  networks:
+    ghost_network:
+      driver: bridge
   services:
     ghost:
-      image: ghost:latest
-      container_name: "{{ project_name }}_ghost"
-      restart: unless-stopped
-      ports:
-        - "{{ http_port }}:2368"
-      environment:
-        - database__client=mysql
-        - database__connection__host=mysql
-        - database__connection__user=ghost
-        - database__connection__password={{ mysql_password }}
-        - database__connection__database=ghost
-        - url=http://{{ site_url }}:{{ http_port }}
-        - mail__transport=SMTP
-        - mail__options__service=Mailgun
-        - mail__options__auth__user={{ email }}
-      volumes:
-        - ghost_data:/var/lib/ghost/content
+      container_name: '{{ project_name }}_ghost'
       depends_on:
-        - mysql
-      networks:
-        - ghost_network
-    
-    mysql:
-      image: mysql:8.0
-      container_name: "{{ project_name }}_mysql"
-      restart: unless-stopped
+      - mysql
       environment:
-        - MYSQL_ROOT_PASSWORD={{ mysql_password }}
-        - MYSQL_DATABASE=ghost
-        - MYSQL_USER=ghost
-        - MYSQL_PASSWORD={{ mysql_password }}
-      volumes:
-        - mysql_data:/var/lib/mysql
+      - database__client=mysql
+      - database__connection__host=mysql
+      - database__connection__user=ghost
+      - database__connection__password={{ mysql_password }}
+      - database__connection__database=ghost
+      - url=http://{{ site_url }}:{{ http_port }}
+      - mail__transport=SMTP
+      - mail__options__service=Mailgun
+      - mail__options__auth__user={{ email }}
+      image: ghost:latest
       networks:
-        - ghost_network
-  
+      - ghost_network
+      ports:
+      - '{{ http_port }}:2368'
+      restart: unless-stopped
+      volumes:
+      - ghost_data:/var/lib/ghost/content
+    mysql:
+      container_name: '{{ project_name }}_mysql'
+      environment:
+      - MYSQL_ROOT_PASSWORD={{ mysql_password }}
+      - MYSQL_DATABASE=ghost
+      - MYSQL_USER=ghost
+      - MYSQL_PASSWORD={{ mysql_password }}
+      image: mysql:8.0
+      networks:
+      - ghost_network
+      restart: unless-stopped
+      volumes:
+      - mysql_data:/var/lib/mysql
+  version: '3.8'
   volumes:
     ghost_data:
       driver: local
     mysql_data:
       driver: local
-  
-  networks:
-    ghost_network:
-      driver: bridge
+fields:
+  traefik_enabled:
+    default: true
+    description: Enable Traefik reverse proxy
+    required: false
+    type: boolean
+  domain:
+    default: ''
+    description: Custom domain (optional)
+    required: false
+    type: domain
+  email:
+    default: admin@example.com
+    description: Admin email
+    required: true
+    type: email
+  http_port:
+    default: '2368'
+    description: HTTP port
+    required: true
+    type: port
+  mysql_password:
+    default: auto
+    description: MySQL password
+    required: true
+    type: password
+  site_url:
+    default: localhost
+    description: Site URL
+    required: true
+    type: domain
+  ssl_enabled:
+    default: true
+    description: Enable SSL/TLS certificates
+    required: false
+    type: boolean
+  subdomain:
+    default: '{{ project_name }}'
+    description: Subdomain prefix
+    required: false
+    type: string
+    validation: ^[a-z0-9-]+$
+template_info:
+  description: Ghost - Professional publishing platform
+  services:
+  - ghost
+  - mysql
+  traefik_compatible: true
+  version: '1.0'
+traefik_config:
+  middlewares:
+  - config:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Content-Type-Options: nosniff
+          X-Frame-Options: SAMEORIGIN
+    name: ghost-headers
+  routing_priority: 1
+  service_port: 2368

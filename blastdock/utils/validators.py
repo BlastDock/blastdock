@@ -41,8 +41,20 @@ class InputValidator:
     
     @classmethod
     def validate_project_name(cls, name: str, raise_on_error: bool = False) -> Tuple[bool, str]:
-        """Validate project name with comprehensive checks"""
+        """Validate project name with comprehensive checks using security validator"""
         try:
+            # Use security validator if available for enhanced validation
+            try:
+                from ..security import get_security_validator
+                validator = get_security_validator()
+                is_valid, error = validator.validate_project_name(name)
+                if not is_valid:
+                    raise ValidationError(error or "Invalid project name")
+                return True, ""
+            except ImportError:
+                # Fallback to basic validation if security module not available
+                pass
+            
             if not name:
                 raise ValidationError("Project name cannot be empty")
             

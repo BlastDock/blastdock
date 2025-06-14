@@ -1,82 +1,100 @@
-template_info:
-  description: "Grafana - Analytics & monitoring platform"
-  version: "1.0"
-  services:
-    - grafana
-    - prometheus
-
-fields:
-  http_port:
-    type: port
-    description: "HTTP port"
-    default: "3000"
-    required: true
-  
-  admin_password:
-    type: password
-    description: "Admin password"
-    default: "auto"
-    required: true
-  
-  prometheus_port:
-    type: port
-    description: "Prometheus port"
-    default: "9090"
-    required: true
-
 compose:
-  version: '3.8'
-  
+  networks:
+    monitoring_network:
+      driver: bridge
   services:
     grafana:
-      image: grafana/grafana:latest
-      container_name: "{{ project_name }}_grafana"
-      restart: unless-stopped
-      ports:
-        - "{{ http_port }}:3000"
+      container_name: '{{ project_name }}_grafana'
       environment:
-        - GF_SECURITY_ADMIN_PASSWORD={{ admin_password }}
-        - GF_USERS_ALLOW_SIGN_UP=false
-      volumes:
-        - grafana_data:/var/lib/grafana
+      - GF_SECURITY_ADMIN_PASSWORD={{ admin_password }}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      image: grafana/grafana:latest
       networks:
-        - monitoring_network
-    
-    prometheus:
-      image: prom/prometheus:latest
-      container_name: "{{ project_name }}_prometheus"
-      restart: unless-stopped
+      - monitoring_network
       ports:
-        - "{{ prometheus_port }}:9090"
+      - '{{ http_port }}:3000'
+      restart: unless-stopped
       volumes:
-        - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-        - prometheus_data:/prometheus
+      - grafana_data:/var/lib/grafana
+    prometheus:
       command:
-        - '--config.file=/etc/prometheus/prometheus.yml'
-        - '--storage.tsdb.path=/prometheus'
-        - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-        - '--web.console.templates=/usr/share/prometheus/consoles'
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+      container_name: '{{ project_name }}_prometheus'
+      image: prom/prometheus:latest
       networks:
-        - monitoring_network
-  
+      - monitoring_network
+      ports:
+      - '{{ prometheus_port }}:9090'
+      restart: unless-stopped
+      volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+  version: '3.8'
   volumes:
     grafana_data:
       driver: local
     prometheus_data:
       driver: local
-  
-  networks:
-    monitoring_network:
-      driver: bridge
-
 config_files:
-  - path: config/prometheus/prometheus.yml
-    content: |
-      global:
-        scrape_interval: 15s
-        evaluation_interval: 15s
-
-      scrape_configs:
-        - job_name: 'prometheus'
-          static_configs:
-            - targets: ['localhost:9090']
+- content: "global:\n  scrape_interval: 15s\n  evaluation_interval: 15s\n\nscrape_configs:\n\
+    \  - job_name: 'prometheus'\n    static_configs:\n      - targets: ['localhost:9090']\n"
+  path: config/prometheus/prometheus.yml
+fields:
+  traefik_enabled:
+    default: true
+    description: Enable Traefik reverse proxy
+    required: false
+    type: boolean
+  admin_password:
+    default: auto
+    description: Admin password
+    required: true
+    type: password
+  domain:
+    default: ''
+    description: Custom domain (optional)
+    required: false
+    type: domain
+  http_port:
+    default: '3000'
+    description: HTTP port
+    required: true
+    type: port
+  prometheus_port:
+    default: '9090'
+    description: Prometheus port
+    required: true
+    type: port
+  ssl_enabled:
+    default: true
+    description: Enable SSL/TLS certificates
+    required: false
+    type: boolean
+  subdomain:
+    default: '{{ project_name }}'
+    description: Subdomain prefix
+    required: false
+    type: string
+    validation: ^[a-z0-9-]+$
+template_info:
+  description: Grafana - Analytics & monitoring platform
+  services:
+  - grafana
+  - prometheus
+  traefik_compatible: true
+  version: '1.0'
+traefik_config:
+  middlewares:
+  - config:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Content-Type-Options: nosniff
+          X-Frame-Options: SAMEORIGIN
+    name: grafana-headers
+  routing_priority: 1
+  service_port: 3000

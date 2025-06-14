@@ -1,63 +1,96 @@
-# BlastDock v1.1.0 - Complete Usage Guide
+# BlastDock v2.0.0 - Complete Usage Guide
 
 ## 🚀 Quick Start Guide
 
-### Option 1: Production Setup with Traefik + SSL
+### Option 1: Production Setup with Smart Traefik Integration
 
-Perfect for production deployments with automatic SSL certificates and domain routing.
+Perfect for production deployments with automatic SSL certificates and clean templates.
 
 ```bash
-# 1. Install Traefik with your domain
+# 1. Install Traefik (one-time setup)
 blastdock traefik install --email admin@yourdomain.com --domain yourdomain.com
 
-# 2. Deploy WordPress with automatic SSL
-blastdock init wordpress --traefik --ssl --name myblog
-blastdock deploy myblog
+# 2. Deploy WordPress with automatic Traefik configuration
+blastdock deploy create myblog --template wordpress --traefik
 
-# ✅ Access at https://myblog.yourdomain.com (SSL automatic!)
+# ✅ BlastDock automatically:
+#    - Loads clean template (no Traefik config)
+#    - Detects WordPress as web service
+#    - Injects all Traefik labels
+#    - Configures SSL certificates
+#    - Sets up domain routing
+#    - Removes port bindings
+
+# 3. Access at https://myblog.yourdomain.com (SSL automatic!)
 ```
 
 ### Option 2: Development Setup (Traditional Ports)
 
-Great for local development and testing.
+Great for local development without Traefik complexity.
 
 ```bash
 # 1. Deploy MySQL database
-blastdock init mysql --no-traefik --name devdb
-blastdock deploy devdb
+blastdock deploy create devdb --template mysql
 
-# 2. Connect at localhost:3306 with generated credentials
-blastdock status devdb  # Shows credentials and status
+# 2. Connect at localhost:3306
+blastdock deploy status devdb  # Shows credentials and connection info
 ```
 
 ## 📋 Complete Command Reference
 
-### 🎯 **Project Management**
+### 🚀 **Deployment Management (NEW)**
 
 ```bash
-# Initialize new project with options
-blastdock init <template> [OPTIONS]
-  --traefik/--no-traefik    # Enable/disable Traefik integration
-  --ssl/--no-ssl            # Enable/disable SSL certificates
+# Create and deploy projects
+blastdock deploy create <project> --template <name> [OPTIONS]
+  --traefik                 # Enable Traefik integration
   --domain <domain>         # Custom domain (e.g., app.yourdomain.com)
-  --subdomain <subdomain>   # Custom subdomain (e.g., app)
-  --name <name>             # Project name
-  --interactive, -i         # Interactive mode
+  --subdomain <subdomain>   # Custom subdomain (default: project name)
+  --env KEY=VALUE          # Set environment variables
 
-# Deploy project
-blastdock deploy <project>
+# Manage deployments
+blastdock deploy list              # List all deployments
+blastdock deploy status <project>  # Detailed status with health
+blastdock deploy update <project>  # Update configuration
+blastdock deploy remove <project>  # Remove deployment
+blastdock deploy logs <project>    # View logs
+blastdock deploy exec <project> <command>  # Execute command in container
+```
 
-# Project status and monitoring
-blastdock status <project>     # Detailed status with domain info
-blastdock logs <project>       # View logs
-blastdock logs <project> -f    # Follow logs real-time
-blastdock logs <project> -s <service>  # Specific service logs
+### 🛒 **Template Marketplace (NEW)**
 
-# Project lifecycle
-blastdock stop <project>       # Stop project
-blastdock remove <project>     # Remove project (with confirmation)
-blastdock list                 # List all projects
-blastdock config <project>     # Show project configuration
+```bash
+# Discover templates
+blastdock marketplace search [query]     # Search templates
+blastdock marketplace featured           # Show featured templates
+blastdock marketplace categories         # List categories
+blastdock marketplace info <template>    # Template details with ratings
+
+# Install templates
+blastdock marketplace install <template>    # Install locally
+blastdock marketplace update <template>     # Update template
+blastdock marketplace list --installed      # Show installed
+blastdock marketplace remove <template>     # Uninstall template
+```
+
+### 📊 **Monitoring & Dashboard (NEW)**
+
+```bash
+# Health monitoring
+blastdock monitoring health <project>       # Check health status
+blastdock monitoring metrics <project>      # View metrics
+blastdock monitoring alerts                 # Show active alerts
+blastdock monitoring dashboard <project>    # Live CLI dashboard
+
+# Web dashboard (NEW)
+blastdock monitoring web                    # Start web dashboard
+blastdock monitoring web --browser          # Auto-open browser
+blastdock monitoring web --port 9000        # Custom port
+
+# Background monitoring
+blastdock monitoring background --start     # Start monitoring
+blastdock monitoring background --stop      # Stop monitoring
+blastdock monitoring background --status    # Check status
 ```
 
 ### 🔄 **Traefik Management**
@@ -71,10 +104,9 @@ blastdock traefik install --email <email> --domain <domain>
 # Traefik operations
 blastdock traefik status       # Show status and certificate info
 blastdock traefik logs         # View Traefik logs
-blastdock traefik logs -f      # Follow Traefik logs
 blastdock traefik restart      # Restart Traefik
 blastdock traefik dashboard    # Open dashboard in browser
-blastdock traefik remove       # Remove Traefik (with confirmation)
+blastdock traefik remove       # Remove Traefik
 ```
 
 ### 🌐 **Domain Management**
@@ -82,215 +114,309 @@ blastdock traefik remove       # Remove Traefik (with confirmation)
 ```bash
 # Domain operations
 blastdock domain list                    # List all domains/subdomains
-blastdock domain check <domain>          # Check domain status and DNS
-blastdock domain set-default <domain>    # Set default domain for new projects
+blastdock domain check <domain>          # Check availability and DNS
+blastdock domain set-default <domain>    # Set default domain
+blastdock domain validate <domain>       # Validate domain configuration
 ```
 
-### 🔌 **Port Management**
+### 🔧 **Configuration Management**
 
 ```bash
-# Port operations
-blastdock ports list           # Show all port allocations
-blastdock ports conflicts      # Check for port conflicts
-blastdock ports reserve <port> # Reserve specific port
-blastdock ports release <port> # Release reserved port
+# BlastDock configuration
+blastdock config show                    # Show current configuration
+blastdock config set <key> <value>       # Update configuration
+blastdock config profiles                # List configuration profiles
+blastdock config profile use <name>      # Switch profile
+blastdock config validate                # Validate configuration
 ```
 
-### 🔒 **SSL Certificate Management**
+### 🛡️ **Security & Performance**
 
 ```bash
-# SSL operations
-blastdock ssl status           # Show all SSL certificate status
-blastdock ssl renew <domain>   # Force certificate renewal
-blastdock ssl test <domain>    # Test SSL configuration
-```
+# Security scanning
+blastdock security scan <project>        # Scan project
+blastdock security audit                 # System audit
+blastdock security validate              # Validate templates
 
-### 🔧 **Migration Tools**
-
-```bash
-# Migration operations
-blastdock migrate to-traefik                    # Show migration compatibility
-blastdock migrate to-traefik <project>          # Migrate specific project
-blastdock migrate to-traefik --all              # Migrate all compatible projects
-blastdock migrate to-traefik <project> --dry-run # Test migration
-blastdock migrate rollback <project>            # Rollback migration
+# Performance optimization
+blastdock performance analyze            # Analyze performance
+blastdock performance optimize           # Run optimizations
+blastdock performance benchmark          # Run benchmarks
 ```
 
 ## 📚 Real-World Examples
 
-### 🌐 **Production WordPress Site**
+### 🌐 **Production WordPress with Smart Traefik**
 
 ```bash
-# 1. Set up Traefik with your domain
+# 1. Set up Traefik
 blastdock traefik install --email admin@mybusiness.com --domain mybusiness.com
 
-# 2. Deploy WordPress with SSL
-blastdock init wordpress --traefik --ssl --domain www.mybusiness.com
-blastdock deploy wordpress-site
+# 2. Deploy WordPress
+blastdock deploy create blog --template wordpress --traefik --domain www.mybusiness.com
 
-# 3. Deploy additional services with subdomains
-blastdock init grafana --traefik --ssl --subdomain monitoring
-blastdock deploy monitoring
+# 3. Monitor deployment
+blastdock monitoring web --browser
 
-# ✅ Access:
-# https://www.mybusiness.com (WordPress)
-# https://monitoring.mybusiness.com (Grafana)
+# ✅ Access at https://www.mybusiness.com with automatic SSL!
+```
+
+### 🛒 **Using the Template Marketplace**
+
+```bash
+# 1. Search for CMS templates
+blastdock marketplace search cms
+
+# 2. Get details about Ghost
+blastdock marketplace info ghost-blog
+
+# 3. Install and deploy
+blastdock marketplace install ghost-blog
+blastdock deploy create myblog --template ghost --traefik
+
+# 4. Check deployment
+blastdock deploy status myblog
+```
+
+### 📊 **Complete Monitoring Stack**
+
+```bash
+# 1. Deploy monitoring services
+blastdock deploy create grafana --template grafana --traefik --subdomain monitor
+blastdock deploy create prometheus --template prometheus --traefik --subdomain metrics
+blastdock deploy create loki --template grafana-loki --traefik --subdomain logs
+
+# 2. Start web dashboard
+blastdock monitoring web --browser
+
+# 3. Access services
+# https://monitor.yourdomain.com (Grafana)
+# https://metrics.yourdomain.com (Prometheus)
+# https://logs.yourdomain.com (Loki)
 ```
 
 ### 🔧 **Development Environment**
 
 ```bash
-# 1. Set up databases for development
-blastdock init mysql --no-traefik --name devdb
-blastdock init redis --no-traefik --name cache
-blastdock init postgres --no-traefik --name pgdb
+# 1. Deploy databases without Traefik
+blastdock deploy create mysql-dev --template mysql
+blastdock deploy create redis-dev --template redis
+blastdock deploy create postgres-dev --template postgresql
 
-# 2. Deploy all services
-blastdock deploy devdb
-blastdock deploy cache  
-blastdock deploy pgdb
+# 2. Check status
+blastdock deploy list
 
-# 3. Connect to services
-# MySQL: localhost:3306
-# Redis: localhost:6379
-# PostgreSQL: localhost:5432
+# 3. View connection details
+blastdock deploy status mysql-dev
 ```
 
-### 📊 **Monitoring Stack**
+## 🏗️ **Clean Architecture Benefits**
 
-```bash
-# 1. Deploy monitoring services with Traefik
-blastdock init grafana --traefik --ssl --subdomain grafana
-blastdock init prometheus --traefik --ssl --subdomain metrics
-blastdock init loki --traefik --ssl --subdomain logs
+### How Templates Stay Clean
 
-# 2. Deploy all services
-blastdock deploy grafana
-blastdock deploy prometheus
-blastdock deploy loki
-
-# ✅ Access with SSL:
-# https://grafana.yourdomain.com
-# https://metrics.yourdomain.com  
-# https://logs.yourdomain.com
+**Traditional Approach (Complex):**
+```yaml
+services:
+  wordpress:
+    image: wordpress
+    {% if traefik_enabled %}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wordpress.rule=Host(`{{ domain }}`)
+    networks:
+      - traefik
+    {% else %}
+    ports:
+      - "80:80"
+    {% endif %}
 ```
 
-### 🔄 **Migrating Existing Projects**
-
-```bash
-# 1. Check what can be migrated
-blastdock migrate to-traefik
-
-# 2. Test migration (dry run)
-blastdock migrate to-traefik myproject --dry-run
-
-# 3. Perform migration with SSL
-blastdock migrate to-traefik myproject --ssl
-
-# 4. Rollback if needed
-blastdock migrate rollback myproject
+**BlastDock Approach (Clean):**
+```yaml
+# Template contains NO Traefik configuration!
+services:
+  wordpress:
+    image: wordpress
+    ports:
+      - "80:80"
+    # That's it! BlastDock handles everything else
 ```
 
-## 📋 **Available Templates (100+)**
+### What BlastDock Does
 
-### Popular Templates:
-- **wordpress** - WordPress + MySQL with SSL support
+1. **Loads Clean Template** - No Traefik configuration
+2. **Detects Web Service** - From template metadata
+3. **Injects Labels** - Dynamically based on project
+4. **Manages Networks** - Adds external Traefik network
+5. **Configures SSL** - Automatic Let's Encrypt
+6. **Sets Up Routing** - Domain/subdomain configuration
+
+## 📋 **Popular Templates**
+
+### Web Applications
+- **wordpress** - Blog/CMS with MySQL
+- **ghost** - Modern publishing platform
 - **nextcloud** - Self-hosted cloud storage
-- **grafana** - Data visualization and monitoring
-- **mysql/postgresql** - Database servers
-- **redis** - In-memory data store  
-- **nginx** - Web server and reverse proxy
 - **gitlab** - Complete DevOps platform
+- **discourse** - Community forum
+- **matomo** - Web analytics
+
+### Databases
+- **mysql** - MySQL database
+- **postgresql** - PostgreSQL database
+- **mongodb** - NoSQL database
+- **redis** - In-memory cache
+- **elasticsearch** - Search engine
+
+### Monitoring
+- **grafana** - Data visualization
+- **prometheus** - Metrics collection
+- **uptime-kuma** - Uptime monitoring
+- **portainer** - Docker management
+
+### Development
 - **jenkins** - CI/CD automation
-- **mattermost** - Team communication
-- **jellyfin** - Media streaming server
+- **gitea** - Lightweight Git service
+- **sonarqube** - Code quality
+- **drone** - Modern CI platform
 
-View all available templates:
+View all 100+ templates:
 ```bash
-blastdock templates
+blastdock marketplace search
 ```
 
-## Example Projects
+## 💡 **Tips & Best Practices**
 
-### Development Database
+### 1. **Use Marketplace for Discovery**
 ```bash
-blastdock init mysql
-# Name: devdb
-# Use defaults for everything
-blastdock deploy devdb
-# Connect to localhost:3306 with generated credentials
+# Instead of: blastdock templates
+# Use: blastdock marketplace search
 ```
 
-### Personal Blog
+### 2. **Always Use Deploy Commands**
 ```bash
-blastdock init wordpress
-# Name: myblog
-# Domain: myblog.local
-# Port: 8080
-blastdock deploy myblog
-# Access at http://localhost:8080
+# Instead of: blastdock init + blastdock deploy
+# Use: blastdock deploy create
 ```
 
-### Automation Server
+### 3. **Monitor with Web Dashboard**
 ```bash
-blastdock init n8n
-# Name: automation
-# Port: 5678
-blastdock deploy automation
-# Access at http://localhost:5678
+# Start dashboard for visual monitoring
+blastdock monitoring web --browser
 ```
 
-## Project Structure
-
-Each project creates:
-```
-./deploys/projectname/
-├── docker-compose.yml    # Generated Docker Compose file
-├── .env                 # Environment variables
-├── .blastdock.json     # Project metadata
-├── config/             # Configuration files
-└── logs/               # Log files
-```
-
-## Tips
-
-1. **Check ports**: Make sure ports aren't already in use
-2. **Save credentials**: Check the `.env` file for generated passwords
-3. **Backup data**: Use `docker volume ls` to see data volumes
-4. **Monitor resources**: Use `docker stats` to check resource usage
-5. **Clean up**: Use `blastdock remove` to clean up unused projects
-
-## Troubleshooting
-
-### Docker not running
+### 4. **Check Template Compatibility**
 ```bash
-sudo systemctl start docker  # Linux
-# or start Docker Desktop
+# View Traefik compatibility
+blastdock marketplace info <template>
 ```
 
-### Port conflicts
+### 5. **Use Clean Templates**
+- Templates have NO Traefik configuration
+- BlastDock handles all complexity
+- Same template works everywhere
+
+## 🔍 **Troubleshooting**
+
+### Docker Issues
 ```bash
-# Find what's using a port
-sudo lsof -i :3306
-# or
-ss -tulpn | grep :3306
+# Check Docker status
+blastdock diagnostics docker
+
+# System health check
+blastdock diagnostics system
 ```
 
-### Container won't start
+### Port Conflicts
 ```bash
-# Check logs for errors
-blastdock logs projectname
-# Check Docker logs directly
-docker logs containername
+# Check port usage
+blastdock diagnostics network
+
+# List all ports
+blastdock ports list
 ```
 
-### Reset everything
+### Traefik Issues
 ```bash
-# Remove all projects
-blastdock list
-blastdock remove project1
-blastdock remove project2
+# Check Traefik logs
+blastdock traefik logs -f
 
-# Clean Docker volumes
-docker volume prune
+# Verify certificates
+blastdock ssl status
 ```
+
+### Deployment Problems
+```bash
+# Check deployment logs
+blastdock deploy logs <project>
+
+# Check health status
+blastdock monitoring health <project>
+```
+
+## 🎯 **Migration Guide**
+
+### From v1.x to v2.0
+```bash
+# 1. Update BlastDock
+pip install --upgrade blastdock
+
+# 2. Migrate existing deployments
+blastdock migrate to-v2 --all
+
+# 3. Start using new commands
+blastdock deploy create <project> --template <name>
+```
+
+### From Docker Compose
+```bash
+# 1. Create BlastDock template
+blastdock template import docker-compose.yml
+
+# 2. Deploy with BlastDock
+blastdock deploy create myapp --template imported
+```
+
+## 📚 **Advanced Features**
+
+### Custom Domains
+```bash
+# Use specific domain
+blastdock deploy create app --template nginx --traefik --domain app.example.com
+
+# Use subdomain
+blastdock deploy create api --template nodejs --traefik --subdomain api
+```
+
+### Environment Variables
+```bash
+# Set during deployment
+blastdock deploy create app --template wordpress \
+  --env WORDPRESS_DEBUG=true \
+  --env WP_MEMORY_LIMIT=256M
+```
+
+### Health Monitoring
+```bash
+# Configure health checks
+blastdock monitoring health <project> --interval 30
+
+# Set up alerts
+blastdock monitoring alerts create <project> --cpu 80 --memory 90
+```
+
+## 🚀 **Getting Started Checklist**
+
+1. ✅ Install BlastDock: `pip install blastdock`
+2. ✅ Check Docker: `blastdock diagnostics docker`
+3. ✅ Install Traefik: `blastdock traefik install`
+4. ✅ Browse marketplace: `blastdock marketplace featured`
+5. ✅ Deploy first app: `blastdock deploy create myapp --template wordpress --traefik`
+6. ✅ Monitor: `blastdock monitoring web --browser`
+
+## 📞 **Support**
+
+- **Documentation**: [docs.blastdock.com](https://docs.blastdock.com)
+- **GitHub**: [github.com/BlastDock/blastdock](https://github.com/BlastDock/blastdock)
+- **Community**: [community.blastdock.com](https://community.blastdock.com)
+- **Diagnostics**: `blastdock diagnostics system`

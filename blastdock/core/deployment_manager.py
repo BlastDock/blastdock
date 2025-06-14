@@ -9,16 +9,20 @@ from pathlib import Path
 
 from ..utils.helpers import (
     get_deploys_dir, get_project_path, ensure_dir,
-    save_yaml, save_json, load_json
+    save_yaml, save_json, load_json, load_yaml
 )
 from ..utils.docker_utils import DockerClient
 from .template_manager import TemplateManager
+from .traefik import TraefikIntegrator
+from .domain import DomainManager
 
 class DeploymentManager:
     def __init__(self):
         self.deploys_dir = get_deploys_dir()
         self.docker_client = DockerClient()
         self.template_manager = TemplateManager()
+        self.domain_manager = DomainManager()
+        self.traefik_integrator = TraefikIntegrator(self.domain_manager)
         ensure_dir(self.deploys_dir)
     
     def create_deployment(self, project_name, template_name, config):
@@ -36,11 +40,25 @@ class DeploymentManager:
         # Add project name to config
         config['project_name'] = project_name
         
+        # Load the raw template to get metadata
+        template_file = os.path.join(self.template_manager.templates_dir, f"{template_name}.yml")
+        raw_template_data = load_yaml(template_file)
+        
         # Render template
         template_data = self.template_manager.render_template(template_name, config)
         
-        # Create docker-compose.yml
+        # Get compose data
         compose_data = template_data.get('compose', {})
+        
+        # Process with TraefikIntegrator if enabled
+        compose_data = self.traefik_integrator.process_compose(
+            compose_data, 
+            project_name, 
+            raw_template_data,  # Pass raw template for metadata
+            config
+        )
+        
+        # Create docker-compose.yml
         compose_file = os.path.join(project_path, 'docker-compose.yml')
         save_yaml(compose_data, compose_file)
         
@@ -66,12 +84,18 @@ class DeploymentManager:
             with open(file_path, 'w') as f:
                 f.write(content)
         
+        # Get domain configuration if Traefik is enabled
+        domain_config = None
+        if self._is_traefik_enabled(config, raw_template_data):
+            domain_config = self.domain_manager.get_domain_config(project_name, config)
+        
         # Save project metadata
         metadata = {
             'project_name': project_name,
             'template': template_name,
             'created': datetime.now().isoformat(),
-            'config': config
+            'config': config,
+            'domain_config': domain_config
         }
         metadata_file = os.path.join(project_path, '.blastdock.json')
         save_json(metadata, metadata_file)
@@ -220,3 +244,18 @@ class DeploymentManager:
             print(output)
         
         return output
+    
+    def _is_traefik_enabled(self, user_config, template_data):
+        """Check if Traefik should be enabled for this deployment."""
+        # Check user config first
+        if 'traefik_enabled' in user_config:
+            return user_config['traefik_enabled']
+            
+        # Check template default
+        fields = template_data.get('fields', {})
+        if 'traefik_enabled' in fields:
+            return fields['traefik_enabled'].get('default', True)
+            
+        # Default to enabled if template is Traefik compatible
+        template_info = template_data.get('template_info', {})
+        return template_info.get('traefik_compatible', False)

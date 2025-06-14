@@ -1,1 +1,1 @@
-# Test package for BlastDock
+"""BlastDock test suite"""

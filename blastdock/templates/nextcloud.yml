@@ -1,95 +1,118 @@
-template_info:
-  description: "Nextcloud - Self-hosted productivity platform"
-  version: "1.0"
-  services:
-    - nextcloud
-    - mariadb
-    - redis
-
-fields:
-  http_port:
-    type: port
-    description: "HTTP port"
-    default: "8080"
-    required: true
-  
-  admin_user:
-    type: string
-    description: "Admin username"
-    default: "admin"
-    required: true
-  
-  admin_password:
-    type: password
-    description: "Admin password"
-    default: "auto"
-    required: true
-  
-  db_password:
-    type: password
-    description: "Database password"
-    default: "auto"
-    required: true
-  
-  db_name:
-    type: string
-    description: "Database name"
-    default: "nextcloud"
-    required: true
-
 compose:
-  version: '3.8'
-  
-  services:
-    nextcloud:
-      image: nextcloud:latest
-      container_name: "{{ project_name }}_nextcloud"
-      restart: unless-stopped
-      ports:
-        - "{{ http_port }}:80"
-      environment:
-        - MYSQL_HOST=mariadb
-        - MYSQL_DATABASE={{ db_name }}
-        - MYSQL_USER=nextcloud
-        - MYSQL_PASSWORD={{ db_password }}
-        - NEXTCLOUD_ADMIN_USER={{ admin_user }}
-        - NEXTCLOUD_ADMIN_PASSWORD={{ admin_password }}
-        - REDIS_HOST=redis
-      volumes:
-        - nextcloud_data:/var/www/html
-      depends_on:
-        - mariadb
-        - redis
-      networks:
-        - nextcloud_network
-    
-    mariadb:
-      image: mariadb:10.5
-      container_name: "{{ project_name }}_mariadb"
-      restart: unless-stopped
-      environment:
-        - MYSQL_ROOT_PASSWORD={{ db_password }}
-        - MYSQL_DATABASE={{ db_name }}
-        - MYSQL_USER=nextcloud
-        - MYSQL_PASSWORD={{ db_password }}
-      volumes:
-        - mariadb_data:/var/lib/mysql
-      networks:
-        - nextcloud_network
-    
-    redis:
-      image: redis:alpine
-      container_name: "{{ project_name }}_redis"
-      restart: unless-stopped
-      networks:
-        - nextcloud_network
-  
-  volumes:
-    nextcloud_data:
-      driver: local
-    mariadb_data:
-      driver: local
-  
   networks:
     nextcloud_network:
       driver: bridge
+  services:
+    mariadb:
+      container_name: '{{ project_name }}_mariadb'
+      environment:
+      - MYSQL_ROOT_PASSWORD={{ db_password }}
+      - MYSQL_DATABASE={{ db_name }}
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD={{ db_password }}
+      image: mariadb:10.5
+      networks:
+      - nextcloud_network
+      restart: unless-stopped
+      volumes:
+      - mariadb_data:/var/lib/mysql
+    nextcloud:
+      container_name: '{{ project_name }}_nextcloud'
+      depends_on:
+      - mariadb
+      - redis
+      environment:
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE={{ db_name }}
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD={{ db_password }}
+      - NEXTCLOUD_ADMIN_USER={{ admin_user }}
+      - NEXTCLOUD_ADMIN_PASSWORD={{ admin_password }}
+      - REDIS_HOST=redis
+      image: nextcloud:latest
+      networks:
+      - nextcloud_network
+      ports:
+      - '{{ http_port }}:80'
+      restart: unless-stopped
+      volumes:
+      - nextcloud_data:/var/www/html
+    redis:
+      container_name: '{{ project_name }}_redis'
+      image: redis:alpine
+      networks:
+      - nextcloud_network
+      restart: unless-stopped
+  version: '3.8'
+  volumes:
+    mariadb_data:
+      driver: local
+    nextcloud_data:
+      driver: local
+fields:
+  traefik_enabled:
+    default: true
+    description: Enable Traefik reverse proxy
+    required: false
+    type: boolean
+  admin_password:
+    default: auto
+    description: Admin password
+    required: true
+    type: password
+  admin_user:
+    default: admin
+    description: Admin username
+    required: true
+    type: string
+  db_name:
+    default: nextcloud
+    description: Database name
+    required: true
+    type: string
+  db_password:
+    default: auto
+    description: Database password
+    required: true
+    type: password
+  domain:
+    default: ''
+    description: Custom domain (optional)
+    required: false
+    type: domain
+  http_port:
+    default: '8080'
+    description: HTTP port
+    required: true
+    type: port
+  ssl_enabled:
+    default: true
+    description: Enable SSL/TLS certificates
+    required: false
+    type: boolean
+  subdomain:
+    default: '{{ project_name }}'
+    description: Subdomain prefix
+    required: false
+    type: string
+    validation: ^[a-z0-9-]+$
+template_info:
+  description: Nextcloud - Self-hosted productivity platform
+  services:
+  - nextcloud
+  - mariadb
+  - redis
+  traefik_compatible: true
+  version: '1.0'
+traefik_config:
+  middlewares:
+  - config:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Content-Type-Options: nosniff
+          X-Frame-Options: SAMEORIGIN
+    name: nextcloud-headers
+  routing_priority: 1
+  service_port: 80

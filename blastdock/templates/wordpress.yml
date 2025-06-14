@@ -23,6 +23,12 @@ traefik_config:
   routing_priority: 1
 
 fields:
+  traefik_enabled:
+    type: boolean
+    description: "Enable Traefik reverse proxy"
+    default: true
+    required: false
+    
   domain:
     type: domain
     description: "Custom domain (optional)"
@@ -44,10 +50,9 @@ fields:
   
   wordpress_port:
     type: port
-    description: "WordPress port (only used without Traefik)"
+    description: "WordPress port"
     default: "8080"
-    required: false
-    conditional: "not traefik_enabled"
+    required: true
   
   mysql_root_password:
     type: password
@@ -81,10 +86,8 @@ compose:
       image: wordpress:latest
       container_name: "{{ project_name }}_wordpress"
       restart: unless-stopped
-      {% if not traefik.enabled %}
       ports:
         - "{{ wordpress_port }}:80"
-      {% endif %}
       environment:
         WORDPRESS_DB_HOST: mysql
         WORDPRESS_DB_NAME: "{{ mysql_database }}"
@@ -96,34 +99,6 @@ compose:
         - mysql
       networks:
         - wordpress_network
-        {% if traefik.enabled %}
-        - blastdock-network
-        {% endif %}
-      {% if traefik.enabled %}
-      labels:
-        - "traefik.enable=true"
-        - "traefik.docker.network=blastdock-network"
-        {% if traefik.domain %}
-        - "traefik.http.routers.{{ project_name }}-wordpress.rule=Host(`{{ traefik.domain }}`)"
-        {% elif traefik.subdomain %}
-        - "traefik.http.routers.{{ project_name }}-wordpress.rule=Host(`{{ traefik.subdomain }}.{{ default_domain }}`)"
-        {% endif %}
-        - "traefik.http.routers.{{ project_name }}-wordpress.entrypoints=websecure"
-        - "traefik.http.services.{{ project_name }}-wordpress.loadbalancer.server.port=80"
-        {% if traefik.ssl_enabled %}
-        - "traefik.http.routers.{{ project_name }}-wordpress.tls=true"
-        - "traefik.http.routers.{{ project_name }}-wordpress.tls.certresolver=letsencrypt"
-        {% endif %}
-        - "traefik.http.routers.{{ project_name }}-wordpress.middlewares=wordpress-headers"
-        # HTTP to HTTPS redirect
-        {% if traefik.domain %}
-        - "traefik.http.routers.{{ project_name }}-wordpress-http.rule=Host(`{{ traefik.domain }}`)"
-        {% elif traefik.subdomain %}
-        - "traefik.http.routers.{{ project_name }}-wordpress-http.rule=Host(`{{ traefik.subdomain }}.{{ default_domain }}`)"
-        {% endif %}
-        - "traefik.http.routers.{{ project_name }}-wordpress-http.entrypoints=web"
-        - "traefik.http.routers.{{ project_name }}-wordpress-http.middlewares=https-redirect"
-      {% endif %}
     
     mysql:
       image: mysql:8.0
@@ -148,7 +123,3 @@ compose:
   networks:
     wordpress_network:
       driver: bridge
-    {% if traefik.enabled %}
-    blastdock-network:
-      external: true
-    {% endif %}

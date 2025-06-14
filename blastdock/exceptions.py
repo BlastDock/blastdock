@@ -371,6 +371,43 @@ class RestoreFailedError(BackupError):
         self.reason = reason
 
 
+class SecurityError(BlastDockError):
+    """Base class for security-related errors"""
+    pass
+
+
+class SecurityValidationError(SecurityError):
+    """Raised when security validation fails"""
+    
+    def __init__(self, item: str, reason: str):
+        super().__init__(f"Security validation failed for '{item}': {reason}")
+        self.item = item
+        self.reason = reason
+
+
+class EncryptionError(SecurityError):
+    """Raised when encryption/decryption operations fail"""
+    
+    def __init__(self, operation: str, reason: str):
+        super().__init__(f"Encryption {operation} failed: {reason}")
+        self.operation = operation
+        self.reason = reason
+
+
+class FileOperationError(BlastDockError):
+    """Base class for file operation errors"""
+    pass
+
+
+class FileSecurityError(FileOperationError):
+    """Raised when file security validation fails"""
+    
+    def __init__(self, file_path: str, reason: str):
+        super().__init__(f"File security error for '{file_path}': {reason}")
+        self.file_path = file_path
+        self.reason = reason
+
+
 # Error severity levels
 class ErrorSeverity:
     """Error severity levels for categorizing exceptions"""
@@ -422,6 +459,13 @@ EXCEPTION_SEVERITY_MAP = {
     # Backup-related errors
     BackupFailedError: ErrorSeverity.ERROR,
     RestoreFailedError: ErrorSeverity.ERROR,
+    # Security-related errors
+    SecurityError: ErrorSeverity.ERROR,
+    SecurityValidationError: ErrorSeverity.ERROR,
+    EncryptionError: ErrorSeverity.ERROR,
+    # File operation errors
+    FileOperationError: ErrorSeverity.ERROR,
+    FileSecurityError: ErrorSeverity.ERROR,
 }
 
 

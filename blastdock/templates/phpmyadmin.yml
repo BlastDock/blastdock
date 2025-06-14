@@ -3,8 +3,49 @@ template_info:
   version: "1.0"
   services:
     - phpmyadmin
+  traefik_compatible: true
+  default_port: 80
+  health_check_path: "/"
+
+traefik_config:
+  service_port: 80
+  middlewares:
+    - name: phpmyadmin-headers
+      config:
+        headers:
+          customRequestHeaders:
+            X-Forwarded-Proto: "https"
+          customResponseHeaders:
+            X-Frame-Options: "SAMEORIGIN"
+            X-Content-Type-Options: "nosniff"
+  routing_priority: 1
 
 fields:
+  traefik_enabled:
+    type: boolean
+    description: "Enable Traefik reverse proxy"
+    default: true
+    required: false
+    
+  domain:
+    type: domain
+    description: "Custom domain (optional)"
+    default: ""
+    required: false
+  
+  subdomain:
+    type: string
+    description: "Subdomain prefix"
+    default: "{{ project_name }}"
+    validation: "^[a-z0-9-]+$"
+    required: false
+  
+  ssl_enabled:
+    type: boolean
+    description: "Enable SSL/TLS certificates"
+    default: true
+    required: false
+  
   port:
     type: port
     description: "Web interface port"

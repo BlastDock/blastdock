@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
       "Bash(python test_installation.py:*)",
       "Bash(python3:*)",
       "Bash(mkdir:*)",
@@ -15,7 +16,35 @@
       "Bash(twine check:*)",
       "Bash(twine upload:*)",
       "Bash(grep:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(apt:*)",
+      "Bash(apt install:*)",
+      "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -c \"from blastdock.cli import performance_cmd; print('Performance CLI loaded successfully')\")",
+      "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -c \"from blastdock.cli.performance import performance; print('Performance CLI loaded successfully')\")",
+      "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -c \"from blastdock.cli import main; main()\" version)",
+      "Bash(rg:*)",
+      "Bash(./install.sh:*)",
+      "Bash(pip show:*)",
+      "Bash(pipx list:*)",
+      "Bash(pipx uninstall:*)",
+      "Bash(pipx install:*)",
+      "Bash(/root/.local/share/pipx/venvs/blastdock/bin/pip list)",
+      "Bash(pipx runpip:*)",
+      "Bash(pipx inject:*)",
+      "Bash(pipx reinstall:*)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(tar:*)",
+      "Bash(touch:*)",
+      "Bash(for:*)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(! grep -q \"traefik_compatible:\" \"$file\")",
+      "Bash(then echo \"  - $file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(chmod:*)",
+      "Bash(./publish_to_pypi.sh)",
+      "Bash(./publish_simple.sh:*)"
     ],
     "deny": []
   }

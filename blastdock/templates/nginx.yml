@@ -1,101 +1,93 @@
-template_info:
-  description: "Nginx web server"
-  version: "1.0"
-  services:
-    - nginx
-
-fields:
-  http_port:
-    type: port
-    description: "HTTP port"
-    default: "80"
-    required: true
-  
-  https_port:
-    type: port
-    description: "HTTPS port"
-    default: "443"
-    required: true
-  
-  server_name:
-    type: domain
-    description: "Server name"
-    default: "localhost"
-    required: true
-
 compose:
-  version: '3.8'
-  
-  services:
-    nginx:
-      image: nginx:alpine
-      container_name: "{{ project_name }}_nginx"
-      restart: unless-stopped
-      ports:
-        - "{{ http_port }}:80"
-        - "{{ https_port }}:443"
-      volumes:
-        - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-        - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
-        - ./www:/var/www/html:ro
-        - ./logs/nginx:/var/log/nginx
-      networks:
-        - nginx_network
-  
   networks:
     nginx_network:
       driver: bridge
-      
+  services:
+    nginx:
+      container_name: '{{ project_name }}_nginx'
+      image: nginx:alpine
+      networks:
+      - nginx_network
+      ports:
+      - '{{ http_port }}:80'
+      - '{{ https_port }}:443'
+      restart: unless-stopped
+      volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./www:/var/www/html:ro
+      - ./logs/nginx:/var/log/nginx
+  version: '3.8'
 config_files:
-  - path: config/nginx/nginx.conf
-    content: |
-      user nginx;
-      worker_processes auto;
-      error_log /var/log/nginx/error.log notice;
-      pid /var/run/nginx.pid;
-      
-      events {
-          worker_connections 1024;
-      }
-      
-      http {
-          include /etc/nginx/mime.types;
-          default_type application/octet-stream;
-          
-          log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-                          '$status $body_bytes_sent "$http_referer" '
-                          '"$http_user_agent" "$http_x_forwarded_for"';
-          
-          access_log /var/log/nginx/access.log main;
-          
-          sendfile on;
-          keepalive_timeout 65;
-          
-          include /etc/nginx/conf.d/*.conf;
-      }
-  
-  - path: config/nginx/conf.d/default.conf
-    content: |
-      server {
-          listen 80;
-          server_name {{ server_name }};
-          root /var/www/html;
-          index index.html;
-          
-          location / {
-              try_files $uri $uri/ =404;
-          }
-      }
-  
-  - path: www/index.html
-    content: |
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>Welcome to {{ project_name }}</title>
-      </head>
-      <body>
-          <h1>Welcome to {{ project_name }}</h1>
-          <p>Your Nginx server is running successfully!</p>
-      </body>
-      </html>
+- content: "user nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log\
+    \ notice;\npid /var/run/nginx.pid;\n\nevents {\n    worker_connections 1024;\n\
+    }\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n\
+    \    \n    log_format main '$remote_addr - $remote_user [$time_local] \"$request\"\
+    \ '\n                    '$status $body_bytes_sent \"$http_referer\" '\n     \
+    \               '\"$http_user_agent\" \"$http_x_forwarded_for\"';\n    \n    access_log\
+    \ /var/log/nginx/access.log main;\n    \n    sendfile on;\n    keepalive_timeout\
+    \ 65;\n    \n    include /etc/nginx/conf.d/*.conf;\n}\n"
+  path: config/nginx/nginx.conf
+- content: "server {\n    listen 80;\n    server_name {{ server_name }};\n    root\
+    \ /var/www/html;\n    index index.html;\n    \n    location / {\n        try_files\
+    \ $uri $uri/ =404;\n    }\n}\n"
+  path: config/nginx/conf.d/default.conf
+- content: "<!DOCTYPE html>\n<html>\n<head>\n    <title>Welcome to {{ project_name\
+    \ }}</title>\n</head>\n<body>\n    <h1>Welcome to {{ project_name }}</h1>\n  \
+    \  <p>Your Nginx server is running successfully!</p>\n</body>\n</html>"
+  path: www/index.html
+fields:
+  traefik_enabled:
+    default: true
+    description: Enable Traefik reverse proxy
+    required: false
+    type: boolean
+  domain:
+    default: ''
+    description: Custom domain (optional)
+    required: false
+    type: domain
+  http_port:
+    default: '80'
+    description: HTTP port
+    required: true
+    type: port
+  https_port:
+    default: '443'
+    description: HTTPS port
+    required: true
+    type: port
+  server_name:
+    default: localhost
+    description: Server name
+    required: true
+    type: domain
+  ssl_enabled:
+    default: true
+    description: Enable SSL/TLS certificates
+    required: false
+    type: boolean
+  subdomain:
+    default: '{{ project_name }}'
+    description: Subdomain prefix
+    required: false
+    type: string
+    validation: ^[a-z0-9-]+$
+template_info:
+  description: Nginx web server
+  services:
+  - nginx
+  traefik_compatible: true
+  version: '1.0'
+traefik_config:
+  middlewares:
+  - config:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+        customResponseHeaders:
+          X-Content-Type-Options: nosniff
+          X-Frame-Options: SAMEORIGIN
+    name: nginx-headers
+  routing_priority: 1
+  service_port: 80

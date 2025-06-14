@@ -68,10 +68,14 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+test_*.py
+simple_test.py
+test_blastdock.py
 
-# Documentation
-docs/_build/
-docs/api/
+# Generated files
+generate_report.py
+*_report.md
+import_test_report.md
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -83,5 +87,26 @@ docs/api/
 .env.test.local
 .env.production.local
 
+# Test environments and data
 test_env/
 test_install_env/
+test_venv/
+
+# PyPI publishing
+twine.ini
+.pypirc
+
+# Development tools
+.mypy_cache/
+.ruff_cache/
+.black/
+
+# OS specific
+Thumbs.db
+*.tmp
+.DS_Store?
+
+
+.pypi
+
+.claude/

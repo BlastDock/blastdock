@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "blastdock"
-version = "1.1.0"
+version = "1.2.1"
 authors = [
     {name = "BlastDock Team", email = "info@blastdock.com"},
 ]
@@ -36,6 +36,8 @@ dependencies = [
     "jinja2>=3.0.0",
     "platformdirs>=3.0.0",
     "pydantic>=2.0.0",
+    "cryptography>=41.0.0",
+    "jsonschema>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -60,14 +62,14 @@ Documentation = "https://docs.blastdock.com"
 "Bug Tracker" = "https://github.com/BlastDock/blastdock/issues"
 
 [project.scripts]
-blastdock = "blastdock.cli:main"
+blastdock = "blastdock.main_cli:main"
 
 [tool.setuptools]
-packages = ["blastdock", "blastdock.core", "blastdock.utils", "blastdock.traefik", "blastdock.domains", "blastdock.ports", "blastdock.migration"]
+packages = {find = {}}
 include-package-data = true
 
 [tool.setuptools.package-data]
-blastdock = ["templates/*.yml", "templates/*.yaml"]
+blastdock = ["templates/*.yml", "templates/*.yaml", "templates/**/*.yml", "templates/**/*.yaml"]
 
 [tool.black]
 line-length = 88
