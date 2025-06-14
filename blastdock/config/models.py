@@ -90,7 +90,7 @@ class LoggingConfig(BaseModel):
             }
         }
     
-    @validator('log_dir')
+    @validator('log_dir', allow_reuse=True)
     def validate_log_dir(cls, v):
         """Validate log directory exists or can be created"""
         if v and not os.path.exists(v):
@@ -123,7 +123,7 @@ class DockerConfig(BaseModel):
             }
         }
     
-    @validator('compose_version')
+    @validator('compose_version', allow_reuse=True)
     def validate_compose_version(cls, v):
         """Validate Docker Compose version"""
         valid_versions = ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '3.6', '3.7', '3.8', '3.9']
@@ -154,7 +154,7 @@ class SecurityConfig(BaseModel):
             }
         }
     
-    @validator('password_length')
+    @validator('password_length', allow_reuse=True)
     def validate_password_length(cls, v):
         """Validate password length"""
         if v < 12:
@@ -181,7 +181,7 @@ class TemplateConfig(BaseModel):
             }
         }
     
-    @validator('custom_template_dirs')
+    @validator('custom_template_dirs', allow_reuse=True)
     def validate_template_dirs(cls, v):
         """Validate template directories"""
         validated_dirs = []
@@ -242,8 +242,9 @@ class NetworkConfig(BaseModel):
     dns_servers: List[str] = Field(default_factory=lambda: ["8.8.8.8", "8.8.4.4"], description="Default DNS servers")
     subnet_prefix: str = Field(default="172.20.0.0/16", description="Default subnet prefix")
     enable_network_isolation: bool = Field(default=True, description="Enable network isolation")
+    default_domain: str = Field(default="localhost", description="Default domain for deployments")
     
-    @validator('dns_servers')
+    @validator('dns_servers', allow_reuse=True)
     def validate_dns_servers(cls, v):
         """Validate DNS server addresses"""
         import ipaddress
@@ -316,7 +317,7 @@ class BlastDockConfig(BaseModel):
             }
         }
     
-    @root_validator
+    @root_validator(allow_reuse=True)
     def validate_config_compatibility(cls, values):
         """Validate configuration compatibility"""
         version = values.get('version')

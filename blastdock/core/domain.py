@@ -28,7 +28,7 @@ class DomainManager:
     def __init__(self):
         """Initialize DomainManager."""
         self.config = get_config()
-        self.default_domain = self.config.default_domain or "localhost"
+        self.default_domain = self.config.network.default_domain or "localhost"
         
     def get_domain_config(self, project_name: str, user_config: Dict[str, Any]) -> Dict[str, Any]:
         """
