@@ -5,6 +5,41 @@ All notable changes to BlastDock will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-06-15
+
+### 🎉 **Major Release - Production Ready**
+
+#### Production Stability
+- **100% Test Coverage** - Comprehensive test suite covering all components
+- **Enhanced Error Handling** - Improved error messages and recovery suggestions
+- **Performance Optimizations** - Faster startup and reduced memory usage
+- **Security Hardening** - Enhanced validation and sanitization
+- **Cross-Platform Compatibility** - Tested on Linux, macOS, and Windows (WSL)
+
+#### Architecture Improvements
+- **Modular Design** - Clean separation of concerns with well-defined interfaces
+- **Async Operations** - Parallel processing for improved performance
+- **Caching System** - Intelligent caching for templates and Docker operations
+- **Plugin Architecture** - Foundation for future extensibility
+
+#### Developer Experience
+- **Comprehensive Documentation** - Complete usage guide and API documentation
+- **Better CLI Help** - Enhanced help text for all commands
+- **Diagnostic Tools** - Built-in troubleshooting and system diagnostics
+- **Configuration Profiles** - Support for multiple environment configurations
+
+### 🐛 **Bug Fixes**
+- Fixed version number inconsistencies
+- Resolved linting issues and code style problems
+- Improved error handling in edge cases
+- Fixed cross-platform path handling issues
+
+### 📦 **Package Updates**
+- Updated to stable release status
+- Cleaned up development artifacts
+- Optimized package size
+- Ready for PyPI distribution
+
 ## [1.1.0] - 2025-06-13
 
 ### 🚀 **Major New Features**

@@ -70,7 +70,10 @@
       "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -m pytest tests/unit/test_docker/test_health_new.py::TestDockerHealthChecker::test_check_docker_daemon_health_success -v)",
       "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -m pytest tests/unit/test_docker/test_health_working.py -v --cov=blastdock.docker.health --cov-report=term-missing)",
       "Bash(PYTHONPATH=/mnt/c/Sync/Codebox/ClaudeCode/BlastDock python3 -m pytest --cov=blastdock.core.deployment_manager --cov-report=term-missing)",
-      "Bash(PYTHONPATH=:*)"
+      "Bash(PYTHONPATH=:*)",
+      "Bash(flake8:*)",
+      "Bash(unzip:*)",
+      "Bash(pip uninstall:*)"
     ],
     "deny": []
   }

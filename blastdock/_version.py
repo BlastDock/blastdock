@@ -2,16 +2,16 @@
 Version information for BlastDock
 """
 
-__version__ = "1.2.1"
-__version_info__ = (1, 2, 1)
+__version__ = "2.0.0"
+__version_info__ = (2, 0, 0)
 
 # Version components
-MAJOR = 1
-MINOR = 2
+MAJOR = 2
+MINOR = 0
 PATCH = 0
 
 # Build information
-BUILD_DATE = "2025-06-13"
+BUILD_DATE = "2025-06-15"
 BUILD_COMMIT = "unknown"
 
 # Minimum requirements
