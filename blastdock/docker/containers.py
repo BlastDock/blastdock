@@ -189,7 +189,8 @@ class ContainerManager:
             try:
                 container_info = self.get_container_info(container_id)
                 container_name = container_info.get('name', container_id)
-            except:
+            except Exception as e:
+                self.logger.debug(f"Could not get container info for {container_id}: {e}")
                 container_name = container_id
             
             cmd = ['docker', 'rm']

@@ -399,20 +399,20 @@ class ErrorRecoveryEngine:
         for criterion in plan.success_criteria:
             if criterion == 'docker_running':
                 try:
-                    result = subprocess.run(['docker', 'info'], 
+                    result = subprocess.run(['docker', 'info'],
                                           capture_output=True, timeout=10)
                     if result.returncode != 0:
                         return False
-                except:
+                except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError) as e:
                     return False
-            
+
             elif criterion == 'traefik_running':
                 try:
                     from ..traefik.manager import TraefikManager
                     manager = TraefikManager()
                     if not manager.is_running():
                         return False
-                except:
+                except Exception as e:
                     return False
             
             elif criterion == 'ports_available':

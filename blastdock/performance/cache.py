@@ -4,7 +4,6 @@ High-performance caching system for BlastDock
 
 import os
 import json
-import pickle
 import time
 import hashlib
 import threading
@@ -201,8 +200,10 @@ class CacheManager:
         
         # Calculate size
         try:
-            size_bytes = len(pickle.dumps(value))
-        except:
+            size_bytes = len(json.dumps(value).encode())
+        except (TypeError, ValueError) as e:
+            # Fallback for non-JSON-serializable objects
+            self.logger.debug(f"Could not serialize value for size calculation: {e}")
             size_bytes = len(str(value).encode())
         
         with self._memory_lock:
@@ -259,53 +260,80 @@ class CacheManager:
     def _get_from_disk(self, key: str) -> Any:
         """Get value from disk cache"""
         cache_file = self._get_cache_file_path(key)
-        
+
         try:
             if not os.path.exists(cache_file):
                 return None
-            
-            with open(cache_file, 'rb') as f:
-                cache_data = pickle.load(f)
-            
+
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f)
+
             # Check if expired
             if cache_data.get('ttl') and time.time() - cache_data['timestamp'] > cache_data['ttl']:
                 os.unlink(cache_file)
                 return None
-            
+
             return cache_data['value']
-            
+
         except Exception as e:
             self.logger.debug(f"Failed to read from disk cache {key}: {e}")
             # Clean up corrupted cache file
             try:
                 os.unlink(cache_file)
-            except:
-                pass
+            except (OSError, PermissionError) as unlink_err:
+                self.logger.debug(f"Could not remove corrupted cache file: {unlink_err}")
             return None
     
-    def _set_on_disk(self, key: str, value: Any, ttl: Optional[float], 
+    def _set_on_disk(self, key: str, value: Any, ttl: Optional[float],
                     tags: Optional[list] = None):
         """Set value in disk cache"""
         cache_file = self._get_cache_file_path(key)
-        
+
         try:
+            # Ensure value is JSON-serializable
+            serialized_value = self._make_json_serializable(value)
+
             cache_data = {
                 'key': key,
-                'value': value,
+                'value': serialized_value,
                 'timestamp': time.time(),
                 'ttl': ttl,
                 'tags': tags or []
             }
-            
+
             # Write atomically
             temp_file = cache_file + '.tmp'
-            with open(temp_file, 'wb') as f:
-                pickle.dump(cache_data, f)
-            
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(cache_data, f, indent=2)
+
             os.rename(temp_file, cache_file)
-            
+
         except Exception as e:
             self.logger.debug(f"Failed to write to disk cache {key}: {e}")
+
+    def _make_json_serializable(self, value: Any) -> Any:
+        """Convert value to JSON-serializable format"""
+        # Already JSON-serializable types
+        if isinstance(value, (str, int, float, bool, type(None))):
+            return value
+
+        # Lists
+        if isinstance(value, (list, tuple)):
+            return [self._make_json_serializable(item) for item in value]
+
+        # Dictionaries
+        if isinstance(value, dict):
+            return {str(k): self._make_json_serializable(v) for k, v in value.items()}
+
+        # For complex objects, store string representation
+        # This loses the ability to reconstruct the exact object but is safe
+        try:
+            # Try JSON serialization first
+            json.dumps(value)
+            return value
+        except (TypeError, ValueError):
+            # Fallback to string representation
+            return {'__type__': 'string_repr', 'value': str(value)}
     
     def _delete_from_disk(self, key: str):
         """Delete key from disk cache"""
@@ -342,29 +370,31 @@ class CacheManager:
                         stat = os.stat(filepath)
                         cache_files.append((filepath, stat.st_mtime, stat.st_size))
                         total_size += stat.st_size
-                    except:
+                    except OSError as e:
+                        self.logger.debug(f"Could not stat cache file {filepath}: {e}")
                         continue
             
             # Remove expired files
             current_time = time.time()
             for filepath, mtime, size in cache_files[:]:
                 try:
-                    with open(filepath, 'rb') as f:
-                        cache_data = pickle.load(f)
-                    
-                    if (cache_data.get('ttl') and 
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        cache_data = json.load(f)
+
+                    if (cache_data.get('ttl') and
                         current_time - cache_data['timestamp'] > cache_data['ttl']):
                         os.unlink(filepath)
                         cache_files.remove((filepath, mtime, size))
                         total_size -= size
-                except:
+                except (json.JSONDecodeError, OSError, KeyError, UnicodeDecodeError) as e:
                     # Remove corrupted files
+                    self.logger.debug(f"Removing corrupted cache file {filepath}: {e}")
                     try:
                         os.unlink(filepath)
                         cache_files.remove((filepath, mtime, size))
                         total_size -= size
-                    except:
-                        pass
+                    except (OSError, ValueError) as unlink_err:
+                        self.logger.debug(f"Could not remove corrupted file: {unlink_err}")
             
             # Remove oldest files if over disk limit
             if total_size > self.max_disk_size:
@@ -376,8 +406,8 @@ class CacheManager:
                         os.unlink(filepath)
                         total_size -= size
                         self.stats['evictions'] += 1
-                    except:
-                        pass
+                    except OSError as e:
+                        self.logger.debug(f"Could not evict cache file {filepath}: {e}")
         
         except Exception as e:
             self.logger.error(f"Cache cleanup failed: {e}")
@@ -398,10 +428,10 @@ class CacheManager:
                     try:
                         disk_entries += 1
                         disk_size += os.path.getsize(filepath)
-                    except:
-                        pass
-        except:
-            pass
+                    except OSError as e:
+                        self.logger.debug(f"Could not get size of {filepath}: {e}")
+        except OSError as e:
+            self.logger.debug(f"Could not list cache directory: {e}")
         
         total_requests = self.stats['hits'] + self.stats['misses']
         hit_rate = (self.stats['hits'] / total_requests * 100) if total_requests > 0 else 0

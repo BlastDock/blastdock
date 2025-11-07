@@ -4,6 +4,7 @@ Monitoring and status checking system
 
 from ..utils.docker_utils import DockerClient
 from .deployment_manager import DeploymentManager
+from ..exceptions import ProjectNotFoundError
 from rich.text import Text
 from rich.table import Table
 
@@ -142,13 +143,13 @@ class Monitor:
     def get_logs(self, project_name, service=None, tail=50):
         """Get logs for a project"""
         if not self.deployment_manager.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         return self.deployment_manager.show_logs(project_name, follow=False, service=service)
     
     def follow_logs(self, project_name, service=None):
         """Follow logs for a project"""
         if not self.deployment_manager.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         return self.deployment_manager.show_logs(project_name, follow=True, service=service)

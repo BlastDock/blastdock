@@ -486,10 +486,9 @@ class ImageManager:
             
             # Get file size
             try:
-                import os
                 save_result['file_size'] = os.path.getsize(output_file)
-            except:
-                pass
+            except OSError as e:
+                self.logger.debug(f"Could not get file size of {output_file}: {e}")
             
             return save_result
             
