@@ -63,5 +63,9 @@ def is_port_available(port):
             s.settimeout(1)
             result = s.connect_ex(('localhost', int(port)))
             return result != 0
-    except:
+    except (socket.error, ValueError, OSError) as e:
+        # If we can't check the port, assume it's not available
+        from .logging import get_logger
+        logger = get_logger(__name__)
+        logger.debug(f"Could not check port {port}: {e}")
         return False

@@ -13,6 +13,10 @@ from ..utils.helpers import (
 )
 from ..utils.docker_utils import DockerClient
 from .template_manager import TemplateManager
+from ..exceptions import (
+    ProjectAlreadyExistsError, ProjectNotFoundError, DeploymentFailedError,
+    DockerNotAvailableError
+)
 from .traefik import TraefikIntegrator
 from .domain import DomainManager
 
@@ -30,7 +34,7 @@ class DeploymentManager:
         project_path = get_project_path(project_name)
         
         if os.path.exists(project_path):
-            raise Exception(f"Project '{project_name}' already exists")
+            raise ProjectAlreadyExistsError(project_name)
         
         # Create project directory structure
         ensure_dir(project_path)
@@ -169,10 +173,10 @@ class DeploymentManager:
     def deploy(self, project_name):
         """Deploy a project"""
         if not self.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         if not self.docker_client.is_docker_running():
-            raise Exception("Docker is not running")
+            raise DockerNotAvailableError("Docker is not running")
         
         project_path = get_project_path(project_name)
         
@@ -180,14 +184,14 @@ class DeploymentManager:
         success, output = self.docker_client.compose_up(project_path, project_name)
         
         if not success:
-            raise Exception(f"Deployment failed: {output}")
+            raise DeploymentFailedError(project_name, output)
         
         return output
     
     def stop(self, project_name):
         """Stop a project"""
         if not self.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         project_path = get_project_path(project_name)
         
@@ -195,14 +199,14 @@ class DeploymentManager:
         success, output = self.docker_client.compose_down(project_path, project_name)
         
         if not success:
-            raise Exception(f"Stop failed: {output}")
+            raise DeploymentFailedError(project_name, f'Stop failed: {output}')
         
         return output
     
     def remove(self, project_name, keep_data=False):
         """Remove a project"""
         if not self.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         project_path = get_project_path(project_name)
         
@@ -212,12 +216,12 @@ class DeploymentManager:
                 # Use docker-compose down (keeps volumes)
                 success, output = self.docker_client.compose_down(project_path, project_name)
                 if not success:
-                    raise Exception(f"Failed to stop containers: {output}")
+                    raise DeploymentFailedError(project_name, f'Failed to stop containers: {output}')
             else:
                 # Use docker-compose down --volumes (removes volumes too)
                 success, output = self.docker_client.compose_down_with_volumes(project_path, project_name)
                 if not success:
-                    raise Exception(f"Failed to stop containers and remove volumes: {output}")
+                    raise DeploymentFailedError(project_name, f'Failed to stop containers and remove volumes: {output}')
         except Exception:
             pass  # Continue even if stop fails
         
@@ -229,7 +233,7 @@ class DeploymentManager:
     def show_logs(self, project_name, follow=False, service=None):
         """Show project logs"""
         if not self.project_exists(project_name):
-            raise Exception(f"Project '{project_name}' not found")
+            raise ProjectNotFoundError(project_name)
         
         project_path = get_project_path(project_name)
         
@@ -238,7 +242,7 @@ class DeploymentManager:
         )
         
         if not success:
-            raise Exception(f"Failed to get logs: {output}")
+            raise DeploymentFailedError(project_name, f'Failed to get logs: {output}')
         
         if not follow:
             print(output)

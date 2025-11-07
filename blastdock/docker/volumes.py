@@ -285,10 +285,11 @@ class VolumeManager:
         try:
             from .containers import ContainerManager
             container_manager = ContainerManager()
-            
+
             container_info = container_manager.get_container_info(container_name)
             return container_info.get('state', {}).get('Status') == 'running'
-        except:
+        except Exception as e:
+            self.logger.debug(f"Could not check if container {container_name} is running: {e}")
             return False
     
     def backup_volume(self, volume_name: str, backup_path: str,
@@ -359,15 +360,15 @@ class VolumeManager:
                 try:
                     import os
                     backup_result['backup_size'] = os.path.getsize(backup_path)
-                except:
-                    pass
-            
+                except OSError as e:
+                    self.logger.debug(f"Could not get backup file size: {e}")
+
             finally:
                 # Clean up temporary container
                 try:
                     container_manager.remove_container(temp_container_name, force=True)
-                except:
-                    pass
+                except Exception as e:
+                    self.logger.debug(f"Could not remove temporary container {temp_container_name}: {e}")
             
             return backup_result
             
@@ -454,9 +455,9 @@ class VolumeManager:
                 # Clean up temporary container
                 try:
                     container_manager.remove_container(temp_container_name, force=True)
-                except:
-                    pass
-            
+                except Exception as e:
+                    self.logger.debug(f"Could not remove temporary container {temp_container_name}: {e}")
+
             return restore_result
             
         except Exception as e:

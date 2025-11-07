@@ -153,8 +153,8 @@ class SecureFileOperations:
                 # Clean up temporary file on error
                 try:
                     os.unlink(temp_path)
-                except:
-                    pass
+                except (OSError, PermissionError) as unlink_err:
+                    self.logger.debug(f"Could not remove temp file {temp_path}: {unlink_err}")
                 raise
             
             self.logger.debug(f"Successfully wrote file: {file_path}")

@@ -440,8 +440,8 @@ class InputValidator:
                 result = s.connect_ex(('localhost', port))
                 if result == 0:
                     return "unknown service"
-        except:
-            pass
+        except (socket.error, OSError) as e:
+            logger.debug(f"Could not check port {port}: {e}")
         
         # Common port mappings
         common_ports = {

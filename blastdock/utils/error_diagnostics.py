@@ -286,7 +286,7 @@ class ErrorDiagnostics:
                 try:
                     urllib.request.urlopen(url, timeout=timeout)
                     return True
-                except:
+                except (urllib.error.URLError, socket.timeout, OSError) as e:
                     return False
             
             return {

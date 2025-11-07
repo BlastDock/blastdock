@@ -14,6 +14,7 @@ from ..utils.validators import (
     validate_project_name, validate_domain, validate_email,
     validate_port_input, validate_password, validate_database_name
 )
+from ..exceptions import TemplateNotFoundError, TemplateValidationError, TemplateRenderError, ConfigurationError
 
 console = Console()
 
@@ -53,7 +54,7 @@ class TemplateManager:
         """Get default configuration for template"""
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         if not os.path.exists(template_file):
-            raise Exception(f"Template {template_name} not found")
+            raise TemplateNotFoundError(template_name)
         
         try:
             template_data = load_yaml(template_file)
@@ -73,13 +74,13 @@ class TemplateManager:
             
             return config
         except Exception as e:
-            raise Exception(f"Error loading template: {e}")
+            raise TemplateRenderError(template_name, str(e))
     
     def interactive_config(self, template_name):
         """Interactive configuration for template"""
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         if not os.path.exists(template_file):
-            raise Exception(f"Template {template_name} not found")
+            raise TemplateNotFoundError(template_name)
         
         try:
             template_data = load_yaml(template_file)
@@ -99,7 +100,7 @@ class TemplateManager:
             
             return config
         except Exception as e:
-            raise Exception(f"Error in interactive config: {e}")
+            raise ConfigurationError(f"Error in interactive config: {e}")
     
     def _prompt_field(self, field_name, field_info):
         """Prompt user for field value"""
@@ -163,6 +164,6 @@ class TemplateManager:
             rendered = template.render(**config)
             return yaml.safe_load(rendered)
         except TemplateNotFound:
-            raise Exception(f"Template {template_name} not found")
+            raise TemplateNotFoundError(template_name)
         except Exception as e:
-            raise Exception(f"Error rendering template: {e}")
+            raise TemplateRenderError(template_name, str(e))
