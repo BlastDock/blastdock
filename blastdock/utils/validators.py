@@ -11,10 +11,13 @@ from typing import Tuple, Optional, List, Union
 from urllib.parse import urlparse
 
 from .helpers import validate_port, is_port_available
+from .logging import get_logger
 from ..exceptions import (
     ValidationError, PortValidationError, PortConflictError,
     DomainValidationError, DatabaseNameValidationError, PasswordValidationError
 )
+
+logger = get_logger(__name__)
 
 
 class InputValidator:

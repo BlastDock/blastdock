@@ -131,8 +131,9 @@ class ConfigPersistence:
         logger.debug(f"Created backup: {backup_path}")
     
     def get_file_checksum(self, file_path: Path) -> str:
-        """Calculate file checksum"""
-        hash_md5 = hashlib.md5()
+        """Calculate file checksum (for integrity, not security)"""
+        # Using MD5 for file integrity checking, not security
+        hash_md5 = hashlib.md5(usedforsecurity=False)
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 hash_md5.update(chunk)
@@ -275,11 +276,19 @@ class ConfigBackup:
         """Restore from compressed backup"""
         import tarfile
         import tempfile
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             with tarfile.open(backup_path, 'r:gz') as tar:
+                # Security: Validate all members to prevent path traversal attacks
+                for member in tar.getmembers():
+                    member_path = os.path.realpath(os.path.join(temp_dir, member.name))
+                    if not member_path.startswith(os.path.realpath(temp_dir)):
+                        raise ConfigurationError(
+                            f"Path traversal attempt detected in backup: {member.name}"
+                        )
+                # Safe to extract after validation
                 tar.extractall(temp_dir)
-            
+
             config_file = Path(temp_dir) / 'config.yml'
             if config_file.exists():
                 return load_yaml(str(config_file))

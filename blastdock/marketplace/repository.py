@@ -148,8 +148,16 @@ class TemplateRepository:
         # Extract to destination or temp directory
         if destination is None:
             destination = Path(tempfile.mkdtemp(prefix='blastdock-template-'))
-        
+
         with tarfile.open(package_file, 'r:gz') as tar:
+            # Security: Validate all members to prevent path traversal attacks
+            dest_realpath = os.path.realpath(destination)
+            for member in tar.getmembers():
+                member_path = os.path.realpath(os.path.join(destination, member.name))
+                if not member_path.startswith(dest_realpath):
+                    self.logger.error(f"Path traversal attempt detected: {member.name}")
+                    raise ValueError(f"Path traversal attempt in template package: {member.name}")
+            # Safe to extract after validation
             tar.extractall(destination)
         
         # Return path to extracted template

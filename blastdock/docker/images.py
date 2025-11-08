@@ -3,6 +3,7 @@ Enhanced Docker image management with comprehensive error handling
 """
 
 import json
+import os
 import time
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path

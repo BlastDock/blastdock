@@ -581,7 +581,7 @@ def export(project_name, output):
 
 
 @monitoring.command()
-@click.option('--host', default='0.0.0.0', help='Web dashboard host')
+@click.option('--host', default='127.0.0.1', help='Web dashboard host (default: localhost only for security)')
 @click.option('--port', default=8888, type=int, help='Web dashboard port')
 @click.option('--browser', is_flag=True, help='Open browser automatically')
 @click.pass_context

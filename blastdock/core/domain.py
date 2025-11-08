@@ -256,5 +256,5 @@ class DomainManager:
         try:
             socket.gethostbyname(domain)
             return True
-        except:
+        except (socket.gaierror, socket.herror, OSError):
             return False
