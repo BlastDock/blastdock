@@ -151,7 +151,7 @@ class DeploymentManager:
             try:
                 dt = datetime.fromisoformat(created)
                 return dt.strftime('%Y-%m-%d %H:%M')
-            except:
+            except (ValueError, TypeError):
                 pass
         return 'unknown'
     
@@ -318,8 +318,8 @@ class DeploymentManager:
         try:
             from .config import get_config
             return get_config()
-        except:
-            # Fallback mock config
+        except Exception:
+            # Fallback mock config if import or get_config fails
             class MockConfig:
                 projects_dir = "~/blastdock/projects"
             return MockConfig()

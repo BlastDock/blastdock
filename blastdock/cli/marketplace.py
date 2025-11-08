@@ -159,9 +159,10 @@ def show_featured(limit: int):
     try:
         mp = TemplateMarketplace()
         featured = mp.get_featured_templates(limit)
-        
+
         console.print("\n[bold cyan]🌟 Featured Templates[/bold cyan]\n")
-        
+
+        columns = []
         for i, template in enumerate(featured, 1):
             # Create template card
             card_content = f"""[bold green]{template.display_name}[/bold green]

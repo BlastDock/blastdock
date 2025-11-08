@@ -5,7 +5,7 @@ Template management system
 import os
 import yaml
 import click
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
@@ -21,7 +21,11 @@ console = Console()
 class TemplateManager:
     def __init__(self):
         self.templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
-        self.jinja_env = Environment(loader=FileSystemLoader(self.templates_dir))
+        # Enable autoescape for security (prevents XSS vulnerabilities)
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(self.templates_dir),
+            autoescape=select_autoescape(['html', 'xml', 'yml', 'yaml'])
+        )
     
     def list_templates(self):
         """List available templates"""

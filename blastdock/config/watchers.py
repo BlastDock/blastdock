@@ -176,11 +176,12 @@ class ConfigWatcher:
     def _get_file_checksum(self) -> str:
         """Calculate file checksum"""
         import hashlib
-        
+
         try:
             with open(self.config_file, 'rb') as f:
                 content = f.read()
-                return hashlib.md5(content).hexdigest()
+                # Using MD5 for file integrity checking, not security
+                return hashlib.md5(content, usedforsecurity=False).hexdigest()
         except Exception:
             return ""
     

@@ -6,6 +6,7 @@ import os
 import time
 import threading
 import json
+import shlex
 import subprocess
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
@@ -654,18 +655,23 @@ BlastDock Monitoring System
             'ALERT_ANNOTATIONS': json.dumps(alert.annotations)
         }
         
-        # Execute command
-        result = subprocess.run(
-            command,
-            shell=True,
-            env={**os.environ, **env},
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if result.returncode != 0:
-            raise RuntimeError(f"Command failed: {result.stderr}")
+        # Execute command (safely using shlex.split to prevent command injection)
+        try:
+            # Parse command safely - shlex.split prevents shell injection
+            cmd_args = shlex.split(command)
+            result = subprocess.run(
+                cmd_args,
+                shell=False,  # Security: Never use shell=True with user input
+                env={**os.environ, **env},
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(f"Command failed: {result.stderr}")
+        except ValueError as e:
+            raise ValueError(f"Invalid command format: {e}")
     
     def _send_command_resolution(self, alert: Alert, channel: NotificationChannel):
         """Send resolution notification via command execution"""
@@ -687,18 +693,23 @@ BlastDock Monitoring System
             'ALERT_ANNOTATIONS': json.dumps(alert.annotations)
         }
         
-        # Execute command
-        result = subprocess.run(
-            command,
-            shell=True,
-            env={**os.environ, **env},
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-        
-        if result.returncode != 0:
-            self.logger.warning(f"Resolution command failed: {result.stderr}")
+        # Execute command (safely using shlex.split to prevent command injection)
+        try:
+            # Parse command safely - shlex.split prevents shell injection
+            cmd_args = shlex.split(command)
+            result = subprocess.run(
+                cmd_args,
+                shell=False,  # Security: Never use shell=True with user input
+                env={**os.environ, **env},
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                self.logger.warning(f"Resolution command failed: {result.stderr}")
+        except ValueError as e:
+            self.logger.error(f"Invalid command format: {e}")
     
     def get_active_alerts(self) -> List[Alert]:
         """Get all active alerts"""
