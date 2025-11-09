@@ -31,6 +31,47 @@ logger = get_logger(__name__)
 console = Console()
 
 
+def validate_project_directory_path(project_dir: Path, project_name: str, base_dir: Path) -> None:
+    """Validate project directory path for security (BUG-005 FIX)
+
+    Helper function for validating project directories before using with subprocess.
+
+    Args:
+        project_dir: The project directory path to validate
+        project_name: The project name (must be lowercase alphanumeric with hyphens)
+        base_dir: The base projects directory
+
+    Raises:
+        ValueError: If the path is invalid or contains traversal attempts
+    """
+    import re
+
+    # Validate project name format
+    if not re.match(r'^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$', project_name):
+        raise ValueError(
+            f"Invalid project name '{project_name}'. Must contain only lowercase letters, "
+            "numbers, and hyphens, and cannot start or end with a hyphen."
+        )
+
+    # Resolve paths to absolute paths
+    base_resolved = base_dir.resolve()
+    project_resolved = project_dir.resolve()
+
+    # Ensure project_dir is within base_dir
+    try:
+        project_resolved.relative_to(base_resolved)
+    except ValueError:
+        raise ValueError(
+            f"Project directory '{project_dir}' escapes base directory '{base_dir}'"
+        )
+
+    # Ensure the last component matches project_name
+    if project_resolved.name != project_name:
+        raise ValueError(
+            f"Project directory name '{project_resolved.name}' doesn't match project name '{project_name}'"
+        )
+
+
 class DeploymentManager:
     """Manages the deployment process for projects"""
     
@@ -45,7 +86,52 @@ class DeploymentManager:
         
         # Initialize template registry
         self.template_registry.initialize(preload=False, enhance_traefik=False)
-    
+
+    def _validate_project_directory(self, project_dir: Path, project_name: str) -> None:
+        """Validate project directory path for security (BUG-005 FIX)
+
+        Ensures that the project directory is within the expected base directory
+        and doesn't contain path traversal attempts.
+
+        Args:
+            project_dir: The project directory path to validate
+            project_name: The project name (must match validation regex)
+
+        Raises:
+            DeploymentError: If the path is invalid or contains traversal attempts
+        """
+        try:
+            # Get base projects directory
+            base_dir = Path(self.config_manager.config.projects_dir).resolve()
+
+            # Resolve the project directory to get absolute path
+            resolved_project_dir = project_dir.resolve()
+
+            # Ensure project_dir is within base_dir
+            try:
+                resolved_project_dir.relative_to(base_dir)
+            except ValueError:
+                raise DeploymentError(
+                    f"Project directory '{project_dir}' escapes base directory '{base_dir}'"
+                )
+
+            # Verify the project name portion matches our validation rules
+            if not self._validate_project_name(project_name):
+                raise DeploymentError(
+                    f"Invalid project name '{project_name}'. Must contain only lowercase letters, numbers, and hyphens."
+                )
+
+            # Additional check: ensure the last component matches project_name
+            if resolved_project_dir.name != project_name:
+                raise DeploymentError(
+                    f"Project directory name '{resolved_project_dir.name}' doesn't match project name '{project_name}'"
+                )
+
+        except DeploymentError:
+            raise
+        except Exception as e:
+            raise DeploymentError(f"Failed to validate project directory: {e}")
+
     def deploy_project(self, 
                       project_name: str,
                       template_name: str,
@@ -236,19 +322,23 @@ class DeploymentManager:
         return env_file
     
     def _docker_compose_up(self, project_dir: Path, project_name: str) -> Dict[str, Any]:
-        """Run docker-compose up"""
+        """Run docker-compose up (BUG-005 FIX: Added directory validation)"""
         try:
+            # Validate project directory before using with subprocess
+            self._validate_project_directory(project_dir, project_name)
+
             cmd = [
                 'docker-compose',
                 '-p', project_name,
                 'up', '-d'
             ]
-            
+
             result = subprocess.run(
                 cmd,
-                cwd=project_dir,
+                cwd=str(project_dir.resolve()),  # Use resolved absolute path
                 capture_output=True,
-                text=True
+                text=True,
+                timeout=300  # Add timeout to prevent hanging
             )
             
             if result.returncode == 0:
@@ -512,15 +602,29 @@ def remove_deployment(project_name, force, keep_volumes):
     try:
         # Get project directory
         config_manager = get_config_manager()
-        project_dir = Path(config_manager.config.projects_dir) / project_name
-        
+        base_dir = Path(config_manager.config.projects_dir)
+        project_dir = base_dir / project_name
+
+        # BUG-005 FIX: Validate project directory before subprocess call
+        try:
+            validate_project_directory_path(project_dir, project_name, base_dir)
+        except ValueError as e:
+            console.print(f"[red]Security validation failed: {e}[/red]")
+            return
+
         if project_dir.exists():
             # Run docker-compose down
             cmd = ['docker-compose', '-p', project_name, 'down']
             if not keep_volumes:
                 cmd.append('-v')
-            
-            result = subprocess.run(cmd, cwd=project_dir, capture_output=True, text=True)
+
+            result = subprocess.run(
+                cmd,
+                cwd=str(project_dir.resolve()),
+                capture_output=True,
+                text=True,
+                timeout=120  # Add timeout
+            )
             
             if result.returncode == 0:
                 console.print(f"[green]✓ Project '{project_name}' removed successfully[/green]")
@@ -544,30 +648,38 @@ def remove_deployment(project_name, force, keep_volumes):
 @click.option('--tail', type=int, default=50, help='Number of lines to show')
 @click.option('--service', help='Show logs for specific service')
 def deployment_logs(project_name, follow, tail, service):
-    """View deployment logs"""
+    """View deployment logs (BUG-005 FIX: Added validation)"""
     try:
         # Get project directory
         config_manager = get_config_manager()
-        project_dir = Path(config_manager.config.projects_dir) / project_name
-        
+        base_dir = Path(config_manager.config.projects_dir)
+        project_dir = base_dir / project_name
+
+        # BUG-005 FIX: Validate project directory before subprocess call
+        try:
+            validate_project_directory_path(project_dir, project_name, base_dir)
+        except ValueError as e:
+            console.print(f"[red]Security validation failed: {e}[/red]")
+            return
+
         if not project_dir.exists():
             console.print(f"[red]Project '{project_name}' not found[/red]")
             return
-        
+
         # Build docker-compose logs command
         cmd = ['docker-compose', '-p', project_name, 'logs']
-        
+
         if follow:
             cmd.append('-f')
-        
+
         if tail:
             cmd.extend(['--tail', str(tail)])
-        
+
         if service:
             cmd.append(service)
-        
-        # Run command
-        subprocess.run(cmd, cwd=project_dir)
+
+        # Run command with validated path
+        subprocess.run(cmd, cwd=str(project_dir.resolve()))
         
     except KeyboardInterrupt:
         console.print("\n[yellow]Log viewing stopped[/yellow]")
@@ -578,24 +690,34 @@ def deployment_logs(project_name, follow, tail, service):
 @click.argument('project_name')
 @click.option('--pull', is_flag=True, help='Pull latest images')
 def update_deployment(project_name, pull):
-    """Update a deployment"""
+    """Update a deployment (BUG-005 FIX: Added validation)"""
     try:
         config_manager = get_config_manager()
-        project_dir = Path(config_manager.config.projects_dir) / project_name
-        
+        base_dir = Path(config_manager.config.projects_dir)
+        project_dir = base_dir / project_name
+
+        # BUG-005 FIX: Validate project directory before subprocess call
+        try:
+            validate_project_directory_path(project_dir, project_name, base_dir)
+        except ValueError as e:
+            console.print(f"[red]Security validation failed: {e}[/red]")
+            return
+
         if not project_dir.exists():
             console.print(f"[red]Project '{project_name}' not found[/red]")
             return
-        
+
+        project_dir_str = str(project_dir.resolve())
+
         with console.status("[bold green]Updating deployment...") as status:
             if pull:
                 status.update("[bold green]Pulling latest images...")
                 cmd = ['docker-compose', '-p', project_name, 'pull']
-                subprocess.run(cmd, cwd=project_dir, capture_output=True)
-            
+                subprocess.run(cmd, cwd=project_dir_str, capture_output=True, timeout=300)
+
             status.update("[bold green]Recreating containers...")
             cmd = ['docker-compose', '-p', project_name, 'up', '-d', '--force-recreate']
-            result = subprocess.run(cmd, cwd=project_dir, capture_output=True, text=True)
+            result = subprocess.run(cmd, cwd=project_dir_str, capture_output=True, text=True, timeout=300)
             
             if result.returncode == 0:
                 console.print(f"[green]✓ Project '{project_name}' updated successfully[/green]")

@@ -5,6 +5,7 @@ Port Manager - Handles port allocation, conflict detection, and resolution
 import json
 import socket
 import subprocess
+import threading
 from typing import Dict, List, Optional, Set, Tuple, Any
 from pathlib import Path
 
@@ -18,7 +19,7 @@ logger = get_logger(__name__)
 
 class PortManager:
     """Manages port allocation and conflict resolution for BlastDock deployments"""
-    
+
     # System reserved ports that should never be allocated
     SYSTEM_RESERVED_PORTS = {
         20, 21,    # FTP
@@ -35,14 +36,16 @@ class PortManager:
         995,       # POP3S
         8080,      # Common web alternate (reserved for Traefik dashboard)
     }
-    
+
     # Default dynamic port range
     DEFAULT_DYNAMIC_RANGE = (8000, 9000)
-    
+
     def __init__(self):
         self.config_manager = get_config_manager()
         self.docker_client = DockerClient()
         self.ports_file = paths.data_dir / "ports.json"
+        # BUG-003 FIX: Add lock for thread-safe port allocation
+        self._port_lock = threading.RLock()
         self._load_ports()
     
     def _load_ports(self):
@@ -83,22 +86,24 @@ class PortManager:
     
     def is_port_available(self, port: int) -> bool:
         """Check if a port is available for allocation"""
-        # Check if port is in system reserved range
-        if port in self.SYSTEM_RESERVED_PORTS:
-            return False
-        
-        # Check if port is manually reserved
-        reserved_ports = set(self.ports_data.get('reserved_ports', []))
-        if port in reserved_ports:
-            return False
-        
-        # Check if port is already allocated
-        allocated_ports = self.ports_data.get('allocated_ports', {})
-        if str(port) in allocated_ports:
-            return False
-        
-        # Check if port is actually in use by the system
-        return not self.is_port_in_use(port)
+        # BUG-003 FIX: Use locking for thread-safe port availability check
+        with self._port_lock:
+            # Check if port is in system reserved range
+            if port in self.SYSTEM_RESERVED_PORTS:
+                return False
+
+            # Check if port is manually reserved
+            reserved_ports = set(self.ports_data.get('reserved_ports', []))
+            if port in reserved_ports:
+                return False
+
+            # Check if port is already allocated
+            allocated_ports = self.ports_data.get('allocated_ports', {})
+            if str(port) in allocated_ports:
+                return False
+
+            # Check if port is actually in use by the system
+            return not self.is_port_in_use(port)
     
     def is_port_in_use(self, port: int) -> bool:
         """Check if a port is currently in use by any process"""
@@ -111,63 +116,67 @@ class PortManager:
         except Exception:
             return False
     
-    def allocate_port(self, project_name: str, service_name: str, 
+    def allocate_port(self, project_name: str, service_name: str,
                      preferred_port: Optional[int] = None) -> Optional[int]:
         """Allocate a port for a service"""
-        try:
-            # If preferred port is specified and available, use it
-            if preferred_port and self.is_port_available(preferred_port):
-                self._assign_port(preferred_port, project_name, service_name)
-                return preferred_port
-            
-            # Find next available port in dynamic range
-            dynamic_range = self.ports_data.get('dynamic_range', self.DEFAULT_DYNAMIC_RANGE)
-            start_port, end_port = dynamic_range
-            
-            for port in range(start_port, end_port + 1):
-                if self.is_port_available(port):
-                    self._assign_port(port, project_name, service_name)
-                    return port
-            
-            logger.error(f"No available ports in dynamic range {dynamic_range}")
-            return None
-            
-        except Exception as e:
-            logger.error(f"Error allocating port: {e}")
-            return None
+        # BUG-003 FIX: Use locking for thread-safe port allocation
+        with self._port_lock:
+            try:
+                # If preferred port is specified and available, use it
+                if preferred_port and self.is_port_available(preferred_port):
+                    self._assign_port(preferred_port, project_name, service_name)
+                    return preferred_port
+
+                # Find next available port in dynamic range
+                dynamic_range = self.ports_data.get('dynamic_range', self.DEFAULT_DYNAMIC_RANGE)
+                start_port, end_port = dynamic_range
+
+                for port in range(start_port, end_port + 1):
+                    if self.is_port_available(port):
+                        self._assign_port(port, project_name, service_name)
+                        return port
+
+                logger.error(f"No available ports in dynamic range {dynamic_range}")
+                return None
+
+            except Exception as e:
+                logger.error(f"Error allocating port: {e}")
+                return None
     
     def release_port(self, port: int) -> bool:
         """Release an allocated port"""
-        try:
-            allocated_ports = self.ports_data.get('allocated_ports', {})
-            port_str = str(port)
-            
-            if port_str in allocated_ports:
-                port_info = allocated_ports[port_str]
-                project_name = port_info.get('project_name')
-                
-                # Remove from allocated ports
-                del allocated_ports[port_str]
-                
-                # Remove from project ports
-                if project_name:
-                    project_ports = self.ports_data.get('project_ports', {})
-                    if project_name in project_ports:
-                        if port in project_ports[project_name]:
-                            project_ports[project_name].remove(port)
-                        if not project_ports[project_name]:
-                            del project_ports[project_name]
-                
-                self._save_ports()
-                logger.info(f"Released port {port}")
-                return True
-            else:
-                logger.warning(f"Port {port} was not allocated")
+        # BUG-022 FIX: Use locking when modifying port dictionaries
+        with self._port_lock:
+            try:
+                allocated_ports = self.ports_data.get('allocated_ports', {})
+                port_str = str(port)
+
+                if port_str in allocated_ports:
+                    port_info = allocated_ports[port_str]
+                    project_name = port_info.get('project_name')
+
+                    # Remove from allocated ports
+                    del allocated_ports[port_str]
+
+                    # Remove from project ports
+                    if project_name:
+                        project_ports = self.ports_data.get('project_ports', {})
+                        if project_name in project_ports:
+                            if port in project_ports[project_name]:
+                                project_ports[project_name].remove(port)
+                            if not project_ports[project_name]:
+                                del project_ports[project_name]
+
+                    self._save_ports()
+                    logger.info(f"Released port {port}")
+                    return True
+                else:
+                    logger.warning(f"Port {port} was not allocated")
+                    return False
+
+            except Exception as e:
+                logger.error(f"Error releasing port: {e}")
                 return False
-                
-        except Exception as e:
-            logger.error(f"Error releasing port: {e}")
-            return False
     
     def release_project_ports(self, project_name: str) -> bool:
         """Release all ports allocated to a project"""
@@ -295,7 +304,14 @@ class PortManager:
         # Calculate range statistics
         range_size = dynamic_range[1] - dynamic_range[0] + 1
         available_in_range = len(self.get_available_ports(range_size))
-        
+
+        # BUG-002 FIX: Check for division by zero
+        if range_size > 0:
+            utilization_percentage = ((range_size - available_in_range) / range_size) * 100
+        else:
+            utilization_percentage = 0
+            logger.warning("Invalid port range size, cannot calculate utilization")
+
         return {
             'allocated_ports': total_allocated,
             'reserved_ports': total_reserved,
@@ -303,7 +319,7 @@ class PortManager:
             'dynamic_range': dynamic_range,
             'range_size': range_size,
             'available_in_range': available_in_range,
-            'utilization_percentage': ((range_size - available_in_range) / range_size) * 100
+            'utilization_percentage': utilization_percentage
         }
     
     def list_all_ports(self) -> Dict[str, List[Dict[str, Any]]]:
@@ -511,10 +527,15 @@ class PortManager:
     def _check_docker_port_conflicts(self, port: int) -> List[Dict[str, Any]]:
         """Check for Docker container port conflicts"""
         conflicts = []
-        
+
         try:
             containers = self.docker_client.list_containers(all=False)
-            
+
+            # BUG-014 FIX: Validate containers is not None before iterating
+            if containers is None:
+                logger.warning("Docker client returned None for containers list")
+                return conflicts
+
             for container in containers:
                 ports = container.get('ports', [])
                 for port_mapping in ports:
@@ -531,10 +552,10 @@ class PortManager:
                                     'status': container.get('status')
                                 }
                             })
-        
+
         except Exception as e:
             logger.warning(f"Error checking Docker port conflicts: {e}")
-        
+
         return conflicts
     
     def _get_current_timestamp(self) -> str:
@@ -548,16 +569,21 @@ class PortManager:
             if start_port >= end_port:
                 logger.error("Start port must be less than end port")
                 return False
-            
+
+            # BUG-028 FIX: Check end_port does not exceed valid port range
+            if end_port > 65535:
+                logger.error("End port must be <= 65535")
+                return False
+
             if start_port < 1024:
                 logger.warning("Setting dynamic range below 1024 may conflict with system services")
-            
+
             self.ports_data['dynamic_range'] = (start_port, end_port)
             self._save_ports()
-            
+
             logger.info(f"Set dynamic port range to {start_port}-{end_port}")
             return True
-            
+
         except Exception as e:
             logger.error(f"Error setting dynamic range: {e}")
             return False

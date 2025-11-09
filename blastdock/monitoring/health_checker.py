@@ -352,12 +352,16 @@ class HealthChecker:
                 
                 url = f"http://localhost:{port}/"
             
-            # Perform HTTP request
+            # BUG-011 FIX: Validate timeout is positive and add max_redirects
+            timeout = config.timeout if config.timeout > 0 else 10.0
+
+            # Perform HTTP request with proper validation
             response = requests.get(
                 url,
-                timeout=config.timeout,
+                timeout=timeout,
                 headers=config.headers,
-                allow_redirects=True
+                allow_redirects=True,
+                max_redirects=5  # Limit redirects to prevent infinite loops
             )
             
             response_time = (time.time() - start_time) * 1000

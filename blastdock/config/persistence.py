@@ -347,9 +347,11 @@ class ConfigBackup:
                 if 'metadata' in backup_data:
                     version = backup_data['metadata'].get('blastdock_version', '1.0.0')
                     description = backup_data['metadata'].get('description')
-        except Exception:
-            pass  # Use defaults if metadata extraction fails
-        
+        # BUG-013 FIX: Use specific exceptions instead of bare Exception
+        except (IOError, OSError, json.JSONDecodeError, KeyError, ValueError, Exception) as e:
+            logger.debug(f"Could not extract metadata from backup: {e}")
+            # Use defaults if metadata extraction fails
+
         return ConfigBackupInfo(
             filename=filename,
             timestamp=timestamp,

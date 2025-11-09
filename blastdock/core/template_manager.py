@@ -3,9 +3,11 @@ Template management system
 """
 
 import os
+import re
 import yaml
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
+from jinja2.sandbox import SandboxedEnvironment
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
@@ -21,11 +23,26 @@ console = Console()
 class TemplateManager:
     def __init__(self):
         self.templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates')
-        # Enable autoescape for security (prevents XSS vulnerabilities)
-        self.jinja_env = Environment(
+        # BUG-015 FIX: Use SandboxedEnvironment instead of regular Environment
+        # This prevents template injection attacks by restricting access to dangerous operations
+        self.jinja_env = SandboxedEnvironment(
             loader=FileSystemLoader(self.templates_dir),
             autoescape=select_autoescape(['html', 'xml', 'yml', 'yaml'])
         )
+
+        # Patterns that indicate potential template injection attempts
+        self.TEMPLATE_INJECTION_PATTERNS = [
+            r'\{\{.*\}\}',  # Jinja2 variable syntax
+            r'\{%.*%\}',    # Jinja2 statement syntax
+            r'\{#.*#\}',    # Jinja2 comment syntax
+            r'__.*__',      # Python dunder methods
+            r'\.mro\(',     # Method resolution order
+            r'\.subclasses\(',  # Subclass access
+            r'import\s+',   # Import statements
+            r'eval\(',      # eval function
+            r'exec\(',      # exec function
+            r'__builtins__',  # Builtins access
+        ]
     
     def list_templates(self):
         """List available templates"""
@@ -161,13 +178,73 @@ class TemplateManager:
         
         return True, ""
     
+    def _sanitize_config_value(self, value):
+        """Sanitize configuration value to prevent template injection (BUG-015 FIX)
+
+        Args:
+            value: The configuration value to sanitize
+
+        Returns:
+            Sanitized value
+
+        Raises:
+            TemplateValidationError: If dangerous patterns are detected
+        """
+        if not isinstance(value, str):
+            # Non-string values are safe
+            return value
+
+        # Check for dangerous patterns
+        for pattern in self.TEMPLATE_INJECTION_PATTERNS:
+            if re.search(pattern, value, re.IGNORECASE):
+                raise TemplateValidationError(
+                    f"Configuration value contains potentially dangerous pattern: {pattern}. "
+                    f"Value: {value[:50]}{'...' if len(value) > 50 else ''}"
+                )
+
+        return value
+
+    def _sanitize_config(self, config):
+        """Sanitize all configuration values recursively (BUG-015 FIX)
+
+        Args:
+            config: Configuration dictionary
+
+        Returns:
+            Sanitized configuration dictionary
+        """
+        sanitized = {}
+
+        for key, value in config.items():
+            if isinstance(value, dict):
+                # Recursively sanitize nested dictionaries
+                sanitized[key] = self._sanitize_config(value)
+            elif isinstance(value, list):
+                # Sanitize list items
+                sanitized[key] = [
+                    self._sanitize_config(item) if isinstance(item, dict)
+                    else self._sanitize_config_value(item)
+                    for item in value
+                ]
+            else:
+                # Sanitize single value
+                sanitized[key] = self._sanitize_config_value(value)
+
+        return sanitized
+
     def render_template(self, template_name, config):
-        """Render template with configuration"""
+        """Render template with configuration (BUG-015 FIX: Added sanitization)"""
         try:
+            # Sanitize config before rendering to prevent template injection
+            sanitized_config = self._sanitize_config(config)
+
             template = self.jinja_env.get_template(f"{template_name}.yml")
-            rendered = template.render(**config)
+            rendered = template.render(**sanitized_config)
             return yaml.safe_load(rendered)
         except TemplateNotFound:
             raise TemplateNotFoundError(template_name)
+        except TemplateValidationError:
+            # Re-raise validation errors
+            raise
         except Exception as e:
             raise TemplateRenderError(template_name, str(e))
