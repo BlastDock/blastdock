@@ -10,23 +10,13 @@ import docker
 from docker.errors import DockerException, NotFound, APIError
 
 from .logging import get_logger
+from ..docker.errors import (
+    DockerError,
+    DockerNotFoundError,
+    DockerNotRunningError
+)
 
 logger = get_logger(__name__)
-
-
-class DockerError(Exception):
-    """Base Docker error"""
-    pass
-
-
-class DockerNotFoundError(DockerError):
-    """Docker not found error"""
-    pass
-
-
-class DockerNotRunningError(DockerError):
-    """Docker not running error"""
-    pass
 
 
 class EnhancedDockerClient:
