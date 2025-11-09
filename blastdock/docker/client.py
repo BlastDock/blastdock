@@ -128,9 +128,14 @@ class DockerClient:
                 # Extract version (e.g., "Docker version 20.10.21, build baeda1f")
                 if 'version' in version_line:
                     try:
-                        version = version_line.split()[2].rstrip(',')
-                        availability['docker_version'] = version
-                        self._docker_version = version
+                        # BUG-006 FIX: Check array length before accessing index
+                        parts = version_line.split()
+                        if len(parts) > 2:
+                            version = parts[2].rstrip(',')
+                            availability['docker_version'] = version
+                            self._docker_version = version
+                        else:
+                            availability['warnings'].append("Could not parse Docker version format")
                     except (IndexError, ValueError):
                         availability['warnings'].append("Could not parse Docker version")
             else:

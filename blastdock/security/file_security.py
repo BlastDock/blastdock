@@ -42,38 +42,85 @@ class SecureFileOperations:
     
     def validate_file_path(self, file_path: str, base_dir: Optional[str] = None,
                           allowed_extensions: Optional[set] = None) -> Tuple[bool, Optional[str]]:
-        """Validate file path for security"""
+        """Validate file path for security (BUG-004 FIX)"""
         if not file_path:
             return False, "File path cannot be empty"
-        
+
         try:
-            # Normalize and resolve path
-            normalized_path = os.path.normpath(file_path)
-            
-            # Check for path traversal
-            if '..' in normalized_path or normalized_path.startswith('/'):
-                return False, "Path traversal or absolute path detected"
-            
+            # Convert to Path object for better handling
+            path_obj = Path(file_path)
+
+            # Check for null bytes (path injection)
+            if '\x00' in file_path:
+                return False, "Null byte in path detected"
+
             # If base directory is specified, ensure path stays within it
             if base_dir:
-                full_path = os.path.join(base_dir, normalized_path)
-                resolved_path = os.path.realpath(full_path)
-                base_resolved = os.path.realpath(base_dir)
-                
-                if not resolved_path.startswith(base_resolved + os.sep):
+                base_path = Path(base_dir).resolve()
+
+                # Construct full path
+                if path_obj.is_absolute():
+                    # Absolute paths must be within base_dir
+                    full_path = path_obj.resolve()
+                else:
+                    # Relative paths are joined with base_dir
+                    full_path = (base_path / path_obj).resolve()
+
+                # Check if the resolved path is within base directory
+                # Use try/except to handle symlinks and non-existent paths safely
+                try:
+                    # Ensure the resolved path is relative to base_dir
+                    full_path.relative_to(base_path)
+                except ValueError:
                     return False, "Path escapes base directory"
-            
+
+                # Additional check: verify no symlinks point outside base_dir
+                # Walk up the path checking each component
+                current = full_path
+                while current != base_path:
+                    if current.is_symlink():
+                        # Resolve symlink and check it's still within base
+                        symlink_target = current.resolve()
+                        try:
+                            symlink_target.relative_to(base_path)
+                        except ValueError:
+                            return False, "Symlink points outside base directory"
+                    try:
+                        current = current.parent
+                    except (OSError, RuntimeError):
+                        return False, "Invalid path structure"
+                    # Prevent infinite loop
+                    if current == current.parent:
+                        break
+            else:
+                # No base_dir specified - check for absolute paths and traversal
+                # Resolve the path to get the real location
+                try:
+                    resolved_path = path_obj.resolve()
+                    # Check for path traversal patterns
+                    if '..' in path_obj.parts:
+                        return False, "Path traversal detected"
+                    # Check if it's trying to access root or system directories
+                    if resolved_path.is_absolute():
+                        # Allow absolute paths but warn about system directories
+                        system_dirs = {'/etc', '/sys', '/proc', '/dev', '/boot', '/root'}
+                        for sys_dir in system_dirs:
+                            if str(resolved_path).startswith(sys_dir):
+                                return False, f"Access to system directory {sys_dir} not allowed"
+                except (OSError, RuntimeError) as e:
+                    return False, f"Cannot resolve path: {e}"
+
             # Check file extension
-            file_ext = Path(normalized_path).suffix.lower()
-            
+            file_ext = path_obj.suffix.lower()
+
             if file_ext in self.DANGEROUS_EXTENSIONS:
                 return False, f"Dangerous file extension: {file_ext}"
-            
+
             if allowed_extensions and file_ext not in allowed_extensions:
                 return False, f"File extension not allowed: {file_ext}"
-            
+
             return True, None
-            
+
         except Exception as e:
             return False, f"Path validation failed: {e}"
     
@@ -99,11 +146,12 @@ class SecureFileOperations:
             # Read file content
             with open(file_path, 'r', encoding=encoding) as f:
                 content = f.read()
-            
-            # Additional safety check after reading
-            if len(content.encode(encoding)) != file_size:
-                return False, "", "File size mismatch after reading"
-            
+
+            # BUG-009 FIX: Remove faulty file size mismatch check
+            # The encoding may add BOM or normalize line endings, causing size differences
+            # This check is not reliable and can cause false positives
+            # File integrity should be verified using checksums if needed
+
             return True, content, None
             
         except UnicodeDecodeError as e:

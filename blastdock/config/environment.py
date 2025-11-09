@@ -39,26 +39,32 @@ class EnvironmentManager:
     def _parse_env_value(self, value: str) -> Union[str, int, float, bool, List[str]]:
         """Parse environment variable value to appropriate type"""
         value = value.strip()
-        
+
         # Boolean values
         if value.lower() in self.BOOL_TRUE_VALUES:
             return True
         elif value.lower() in self.BOOL_FALSE_VALUES:
             return False
-        
+
         # List values (comma-separated)
         if ',' in value:
             return [item.strip() for item in value.split(',') if item.strip()]
-        
+
         # Numeric values
+        # BUG-019 FIX: Validate numeric values to reject inf/nan
         try:
             if '.' in value:
-                return float(value)
+                parsed_float = float(value)
+                # Reject infinity and NaN values
+                if parsed_float != parsed_float or parsed_float in (float('inf'), float('-inf')):
+                    logger.warning(f"Rejecting invalid numeric value: {value}")
+                    return value  # Return as string instead
+                return parsed_float
             else:
                 return int(value)
         except ValueError:
             pass
-        
+
         # String value
         return value
     
@@ -230,17 +236,18 @@ class EnvironmentManager:
                 issues.append(f"Required environment variable missing: {var}")
         
         # Validate specific configuration values
+        # BUG-001 FIX: Use .get() with defaults instead of direct dictionary access
         if 'docker' in config:
-            docker_config = config['docker']
-            if 'timeout' in docker_config:
-                timeout = docker_config['timeout']
+            docker_config = config.get('docker', {})
+            timeout = docker_config.get('timeout')
+            if timeout is not None:
                 if not isinstance(timeout, int) or timeout < 5:
                     issues.append("BLASTDOCK_DOCKER_TIMEOUT must be an integer >= 5")
-        
+
         if 'security' in config:
-            security_config = config['security']
-            if 'password_length' in security_config:
-                length = security_config['password_length']
+            security_config = config.get('security', {})
+            length = security_config.get('password_length')
+            if length is not None:
                 if not isinstance(length, int) or length < 12:
                     issues.append("BLASTDOCK_SECURITY_PASSWORD_LENGTH must be an integer >= 12")
         

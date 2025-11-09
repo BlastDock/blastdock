@@ -582,13 +582,13 @@ BlastDock Monitoring System
     def _send_webhook_notification(self, alert: Alert, channel: NotificationChannel):
         """Send webhook notification"""
         import requests
-        
+
         config = channel.config
         url = config.get('url')
-        
+
         if not url:
             raise ValueError("Webhook URL not configured")
-        
+
         payload = {
             'alert': {
                 'rule_name': alert.rule_name,
@@ -600,23 +600,24 @@ BlastDock Monitoring System
                 'annotations': alert.annotations
             }
         }
-        
+
         headers = config.get('headers', {})
         timeout = config.get('timeout', 10)
-        
-        response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+
+        # BUG-024 FIX: Add explicit SSL verification
+        response = requests.post(url, json=payload, headers=headers, timeout=timeout, verify=True)
         response.raise_for_status()
     
     def _send_webhook_resolution(self, alert: Alert, channel: NotificationChannel):
         """Send webhook resolution notification"""
         import requests
-        
+
         config = channel.config
         url = config.get('url')
-        
+
         if not url:
             return
-        
+
         payload = {
             'alert': {
                 'rule_name': alert.rule_name,
@@ -629,11 +630,12 @@ BlastDock Monitoring System
                 'annotations': alert.annotations
             }
         }
-        
+
         headers = config.get('headers', {})
         timeout = config.get('timeout', 10)
-        
-        response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+
+        # BUG-024 FIX: Add explicit SSL verification
+        response = requests.post(url, json=payload, headers=headers, timeout=timeout, verify=True)
         response.raise_for_status()
     
     def _send_command_notification(self, alert: Alert, channel: NotificationChannel):

@@ -52,8 +52,16 @@ class DockerSecurityChecker:
                     'accessible': False,
                     'error': result.stderr.strip()
                 }
-            
-            inspect_data = json.loads(result.stdout)[0]
+
+            # BUG-010 FIX: Add try/except for JSON parsing
+            try:
+                inspect_data = json.loads(result.stdout)[0]
+            except (json.JSONDecodeError, IndexError, KeyError) as e:
+                return {
+                    'container': container_name,
+                    'accessible': False,
+                    'error': f'Failed to parse Docker inspect output: {e}'
+                }
             
             # Analyze security configuration
             security_issues = []
@@ -206,8 +214,16 @@ class DockerSecurityChecker:
                     'accessible': False,
                     'error': result.stderr.strip()
                 }
-            
-            inspect_data = json.loads(result.stdout)[0]
+
+            # BUG-010 FIX: Add try/except for JSON parsing
+            try:
+                inspect_data = json.loads(result.stdout)[0]
+            except (json.JSONDecodeError, IndexError, KeyError) as e:
+                return {
+                    'image': image_name,
+                    'accessible': False,
+                    'error': f'Failed to parse Docker inspect output: {e}'
+                }
             
             security_issues = []
             security_score = 100
@@ -310,8 +326,15 @@ class DockerSecurityChecker:
                     'accessible': False,
                     'error': result.stderr.strip()
                 }
-            
-            docker_info = json.loads(result.stdout)
+
+            # BUG-010 FIX: Add try/except for JSON parsing
+            try:
+                docker_info = json.loads(result.stdout)
+            except (json.JSONDecodeError, KeyError) as e:
+                return {
+                    'accessible': False,
+                    'error': f'Failed to parse Docker info output: {e}'
+                }
             
             security_issues = []
             security_score = 100
