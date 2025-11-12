@@ -385,11 +385,12 @@ class SecureFileOperations:
                 return False, "File does not exist"
             
             if is_directory:
-                # Directory: 755 (rwxr-xr-x)
-                os.chmod(file_path, 0o755)
+                # BUG-HIGH-001 FIX: Use more restrictive permissions for security
+                # Directory: 750 (rwxr-x---) - owner and group only
+                os.chmod(file_path, 0o750)
             else:
-                # File: 644 (rw-r--r--)
-                os.chmod(file_path, 0o644)
+                # File: 640 (rw-r-----) - owner and group read only
+                os.chmod(file_path, 0o640)
             
             return True, None
             

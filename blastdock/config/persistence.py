@@ -286,8 +286,14 @@ class ConfigBackup:
                         raise ConfigurationError(
                             f"Path traversal attempt detected in backup: {member.name}"
                         )
+                # BUG-CRIT-001 FIX: Use filter parameter for Python 3.12+ (CVE-2007-4559)
                 # Safe to extract after validation
-                tar.extractall(temp_dir)
+                try:
+                    # Python 3.12+ requires filter parameter
+                    tar.extractall(temp_dir, filter='data')
+                except TypeError:
+                    # Python < 3.12 doesn't support filter parameter
+                    tar.extractall(temp_dir)
 
             config_file = Path(temp_dir) / 'config.yml'
             if config_file.exists():

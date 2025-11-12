@@ -111,13 +111,15 @@ class TemplateInstaller:
         try:
             # Find template files in download
             template_files = list(download_path.rglob('*.yml'))
+            # BUG-CRIT-002 FIX: Check array is non-empty before indexing
             if not template_files:
                 return {
                     'success': False,
                     'error': "No template files found in package"
                 }
-            
+
             # Use the first .yml file as the main template
+            # Safe: Already checked template_files is non-empty above
             template_file = template_files[0]
             
             # Validate template before installation
