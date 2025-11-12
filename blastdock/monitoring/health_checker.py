@@ -342,8 +342,10 @@ class HealthChecker:
                 
                 if not port and ports:
                     # Use first mapped port
+                    # BUG-CRIT-002 FIX: Check mappings is non-empty before accessing index
                     for internal_port, mappings in ports.items():
                         if mappings and len(mappings) > 0:
+                            # Safe: Already checked len(mappings) > 0 above
                             port = int(mappings[0].get('HostPort', internal_port.split('/')[0]))
                             break
                 

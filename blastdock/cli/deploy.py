@@ -577,7 +577,10 @@ def deployment_status(project_name):
             status = container.status
             panel_content.append(f"\n[bold]{service}:[/bold]")
             panel_content.append(f"  Status: {status}")
-            panel_content.append(f"  Image: {container.image.tags[0] if container.image.tags else 'unknown'}")
+            # BUG-CRIT-002 FIX: Check tags is non-empty before accessing index
+            image_tag = (container.image.tags[0] if container.image.tags and len(container.image.tags) > 0
+                        else 'unknown')
+            panel_content.append(f"  Image: {image_tag}")
         
         console.print(Panel(
             "\n".join(panel_content),
@@ -713,12 +716,16 @@ def update_deployment(project_name, pull):
             if pull:
                 status.update("[bold green]Pulling latest images...")
                 cmd = ['docker-compose', '-p', project_name, 'pull']
-                subprocess.run(cmd, cwd=project_dir_str, capture_output=True, timeout=300)
+                # BUG-HIGH-003 FIX: Check result of subprocess call
+                pull_result = subprocess.run(cmd, cwd=project_dir_str, capture_output=True,
+                                            text=True, timeout=300)
+                if pull_result.returncode != 0:
+                    console.print(f"[yellow]Warning: Failed to pull images: {pull_result.stderr}[/yellow]")
 
             status.update("[bold green]Recreating containers...")
             cmd = ['docker-compose', '-p', project_name, 'up', '-d', '--force-recreate']
             result = subprocess.run(cmd, cwd=project_dir_str, capture_output=True, text=True, timeout=300)
-            
+
             if result.returncode == 0:
                 console.print(f"[green]✓ Project '{project_name}' updated successfully[/green]")
             else:
@@ -771,7 +778,13 @@ def execute_command(project_name, command, service):
         cmd.extend(command)
 
         # VUL-003 FIX: Run command with timeout for safety
-        subprocess.run(cmd, cwd=str(project_dir), timeout=300)
+        # BUG-HIGH-003 NOTE: Output not captured - intentional for interactive commands
+        # User needs to see real-time output from docker-compose exec
+        result = subprocess.run(cmd, cwd=str(project_dir), timeout=300)
+
+        # Check exit code and report if non-zero
+        if result.returncode != 0:
+            console.print(f"[yellow]Command exited with code {result.returncode}[/yellow]")
         
     except Exception as e:
         console.print(f"[red]Error executing command: {e}[/red]")

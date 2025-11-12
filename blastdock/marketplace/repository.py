@@ -157,8 +157,14 @@ class TemplateRepository:
                 if not member_path.startswith(dest_realpath):
                     self.logger.error(f"Path traversal attempt detected: {member.name}")
                     raise ValueError(f"Path traversal attempt in template package: {member.name}")
+            # BUG-CRIT-001 FIX: Use filter parameter for Python 3.12+ (CVE-2007-4559)
             # Safe to extract after validation
-            tar.extractall(destination)
+            try:
+                # Python 3.12+ requires filter parameter
+                tar.extractall(destination, filter='data')
+            except TypeError:
+                # Python < 3.12 doesn't support filter parameter
+                tar.extractall(destination)
         
         # Return path to extracted template
         extracted_path = destination / package_name

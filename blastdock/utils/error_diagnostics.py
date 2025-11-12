@@ -284,9 +284,14 @@ class ErrorDiagnostics:
             
             def check_http(url, timeout=5):
                 try:
+                    # BUG-HIGH-002 FIX: Validate URL scheme before opening
+                    from urllib.parse import urlparse
+                    parsed = urlparse(url)
+                    if parsed.scheme not in ['http', 'https']:
+                        return False
                     urllib.request.urlopen(url, timeout=timeout)
                     return True
-                except (urllib.error.URLError, socket.timeout, OSError) as e:
+                except (urllib.error.URLError, socket.timeout, OSError, ValueError) as e:
                     return False
             
             return {

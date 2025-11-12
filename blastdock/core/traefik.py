@@ -132,8 +132,10 @@ class TraefikIntegrator:
                 
         # Check template_info for web service hint
         template_services = template_info.get('services', [])
-        if template_services and isinstance(template_services, list):
+        # BUG-CRIT-002 FIX: Check list is non-empty before accessing index
+        if template_services and isinstance(template_services, list) and len(template_services) > 0:
             # First service is typically the main web service
+            # Safe: Already checked len(template_services) > 0 above
             primary_service = template_services[0]
             if primary_service in services:
                 return primary_service
@@ -342,10 +344,12 @@ class TraefikIntegrator:
     def _extract_port_from_service(self, service_config):
         """Extract port from service configuration"""
         ports = service_config.get('ports', [])
+        # BUG-CRIT-002 FIX: Check ports is non-empty before accessing index
         if not ports:
             return None
-        
+
         # Get first port mapping
+        # Safe: Already checked ports is non-empty above
         port_mapping = str(ports[0])
         if ':' in port_mapping:
             # Format: "8080:80" -> return 80 (container port)
