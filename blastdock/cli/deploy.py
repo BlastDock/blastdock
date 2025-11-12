@@ -732,18 +732,26 @@ def update_deployment(project_name, pull):
 @click.argument('command', nargs=-1, required=True)
 @click.option('--service', help='Service to execute command in')
 def execute_command(project_name, command, service):
-    """Execute a command in a project container"""
+    """Execute a command in a project container (VUL-003 FIX: Added validation)"""
     try:
         config_manager = get_config_manager()
-        project_dir = Path(config_manager.config.projects_dir) / project_name
-        
+        base_projects_dir = Path(config_manager.config.projects_dir)
+        project_dir = base_projects_dir / project_name
+
+        # VUL-003 FIX: Validate project directory for security
+        try:
+            validate_project_directory_path(project_dir, project_name, base_projects_dir)
+        except ValueError as e:
+            console.print(f"[red]Security validation failed: {e}[/red]")
+            return
+
         if not project_dir.exists():
             console.print(f"[red]Project '{project_name}' not found[/red]")
             return
-        
+
         # Build docker-compose exec command
         cmd = ['docker-compose', '-p', project_name, 'exec']
-        
+
         if service:
             cmd.append(service)
         else:
@@ -759,11 +767,11 @@ def execute_command(project_name, command, service):
                     else:
                         console.print("[red]No services found in docker-compose.yml[/red]")
                         return
-        
+
         cmd.extend(command)
-        
-        # Run command
-        subprocess.run(cmd, cwd=project_dir)
+
+        # VUL-003 FIX: Run command with timeout for safety
+        subprocess.run(cmd, cwd=str(project_dir), timeout=300)
         
     except Exception as e:
         console.print(f"[red]Error executing command: {e}[/red]")
