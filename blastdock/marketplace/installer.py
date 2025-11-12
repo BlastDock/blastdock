@@ -17,6 +17,42 @@ from .marketplace import TemplateMarketplace, MarketplaceTemplate
 logger = get_logger(__name__)
 
 
+def compare_versions(version1: str, version2: str) -> int:
+    """Compare two semantic version strings (BUG-029 FIX)
+
+    Args:
+        version1: First version string (e.g., "2.10.0")
+        version2: Second version string (e.g., "2.9.0")
+
+    Returns:
+        -1 if version1 < version2
+         0 if version1 == version2
+         1 if version1 > version2
+    """
+    def parse_version(version_str: str) -> tuple:
+        """Parse version string into tuple of ints"""
+        try:
+            # Remove 'v' prefix if present
+            version_str = version_str.lstrip('v')
+            # Split on dots and convert to integers
+            parts = version_str.split('.')
+            return tuple(int(p) for p in parts)
+        except (ValueError, AttributeError):
+            # Return (0,) for invalid versions
+            return (0,)
+
+    v1_tuple = parse_version(version1)
+    v2_tuple = parse_version(version2)
+
+    # Compare tuples (Python handles this correctly)
+    if v1_tuple < v2_tuple:
+        return -1
+    elif v1_tuple > v2_tuple:
+        return 1
+    else:
+        return 0
+
+
 class TemplateInstaller:
     """Manages template installation process"""
     
@@ -251,8 +287,10 @@ class TemplateInstaller:
         
         current_version = install_info.get('version', '0.0.0')
         latest_version = marketplace_template.version
-        
-        if current_version >= latest_version:
+
+        # BUG-029 FIX: Use semantic version comparison instead of string comparison
+        version_cmp = compare_versions(current_version, latest_version)
+        if version_cmp >= 0:
             return {
                 'success': False,
                 'error': f"Already at latest version ({current_version})"

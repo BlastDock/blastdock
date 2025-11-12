@@ -11,6 +11,7 @@ from typing import Any, Dict, Optional, Union, Callable, TypeVar, Generic
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
+from collections import OrderedDict  # PERF-001 FIX: Use OrderedDict for O(1) LRU eviction
 
 from ..utils.logging import get_logger
 from ..utils.filesystem import paths
@@ -59,9 +60,10 @@ class CacheManager:
                  cleanup_interval: float = 300):                # 5 minutes
         """Initialize cache manager"""
         self.logger = get_logger(__name__)
-        
-        # Memory cache
-        self._memory_cache: Dict[str, CacheEntry] = {}
+
+        # PERF-001 FIX: Use OrderedDict for O(1) LRU eviction
+        # Memory cache (OrderedDict maintains insertion order for LRU)
+        self._memory_cache: OrderedDict[str, CacheEntry] = OrderedDict()
         self._memory_lock = threading.RLock()
         self._memory_size = 0
         self.max_memory_size = max_memory_size
@@ -99,6 +101,8 @@ class CacheManager:
                 entry = self._memory_cache[key]
                 if not entry.is_expired():
                     entry.touch()
+                    # PERF-001 FIX: Move to end for LRU (O(1) operation in OrderedDict)
+                    self._memory_cache.move_to_end(key)
                     self.stats['hits'] += 1
                     self.stats['memory_hits'] += 1
                     self.logger.debug(f"Cache hit (memory): {key}")
@@ -238,14 +242,15 @@ class CacheManager:
             del self._memory_cache[key]
     
     def _evict_lru(self):
-        """Evict least recently used entry from memory"""
+        """Evict least recently used entry from memory (PERF-001 FIX: O(1) eviction)"""
         if not self._memory_cache:
             return
-        
-        # Find LRU entry
-        lru_key = min(self._memory_cache.keys(), 
-                     key=lambda k: self._memory_cache[k].last_access)
-        
+
+        # PERF-001 FIX: Get first item (oldest/LRU) in O(1) time using OrderedDict
+        # OrderedDict maintains insertion order, and we move_to_end() on access
+        # So first item is always the least recently used
+        lru_key = next(iter(self._memory_cache))
+
         self._remove_from_memory(lru_key)
         self.stats['evictions'] += 1
         self.stats['size_evictions'] += 1

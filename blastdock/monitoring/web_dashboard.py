@@ -26,7 +26,12 @@ class WebDashboard:
     def _setup_flask(self):
         """Setup Flask app"""
         self.app = Flask(__name__)
-        CORS(self.app)
+        # VUL-002 FIX: Restrict CORS to localhost only for security
+        CORS(self.app, resources={
+            r"/api/*": {
+                "origins": ["http://localhost:*", "http://127.0.0.1:*"]
+            }
+        })
         self._register_routes()
     
     def _register_routes(self):
@@ -43,13 +48,22 @@ class WebDashboard:
             return jsonify({'status': 'ok'})
     
     def start_dashboard(self, host='127.0.0.1', port=5000, debug=False):
-        """Start the dashboard"""
+        """Start the dashboard
+
+        Args:
+            host: Host to bind to (default: 127.0.0.1 for security)
+            port: Port to listen on (default: 5000)
+            debug: Debug mode (ALWAYS False in production for security - VUL-004 FIX)
+        """
         if not FLASK_AVAILABLE:
             logger.error("Cannot start dashboard - Flask not installed")
             return False
-        
+
         if self.app:
-            self.app.run(host=host, port=port, debug=debug)
+            # VUL-004 FIX: Never enable debug mode to prevent information disclosure
+            # Debug mode exposes sensitive information and debugging endpoints
+            self.app.run(host=host, port=port, debug=False)
+            logger.info(f"Dashboard started on {host}:{port} (debug disabled for security)")
             return True
         return False
     

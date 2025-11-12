@@ -355,13 +355,14 @@ class HealthChecker:
             # BUG-011 FIX: Validate timeout is positive and add max_redirects
             timeout = config.timeout if config.timeout > 0 else 10.0
 
-            # Perform HTTP request with proper validation
+            # VUL-001 FIX: Perform HTTP request with SSL verification and proper validation
             response = requests.get(
                 url,
                 timeout=timeout,
                 headers=config.headers,
                 allow_redirects=True,
-                max_redirects=5  # Limit redirects to prevent infinite loops
+                max_redirects=5,  # Limit redirects to prevent infinite loops
+                verify=True  # VUL-001 FIX: Enforce SSL/TLS certificate verification
             )
             
             response_time = (time.time() - start_time) * 1000
