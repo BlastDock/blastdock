@@ -681,8 +681,15 @@ def deployment_logs(project_name, follow, tail, service):
         if service:
             cmd.append(service)
 
-        # Run command with validated path
-        subprocess.run(cmd, cwd=str(project_dir.resolve()))
+        # BUG-NEW-002 FIX: Add error checking for subprocess call
+        # Note: No timeout for logs command as it may run indefinitely with --follow
+        result = subprocess.run(
+            cmd,
+            cwd=str(project_dir.resolve()),
+            capture_output=False  # Allow output to stream to console
+        )
+        if result.returncode != 0 and result.returncode != 130:  # 130 is SIGINT (Ctrl+C)
+            console.print(f"[yellow]Warning: Docker logs command exited with code {result.returncode}[/yellow]")
         
     except KeyboardInterrupt:
         console.print("\n[yellow]Log viewing stopped[/yellow]")

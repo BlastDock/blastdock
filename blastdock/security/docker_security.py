@@ -256,8 +256,10 @@ class DockerSecurityChecker:
                             'recommendation': 'Use recent image versions'
                         })
                         security_score -= 15
-                except Exception:
-                    pass
+                except (ValueError, TypeError, KeyError) as e:
+                    # BUG-CRIT-007 FIX: Use specific exceptions instead of generic Exception
+                    # Skip image age check if metadata is malformed
+                    logger.debug(f"Failed to parse image age: {e}")
             
             # Check for latest tag
             if any(':latest' in tag for tag in repo_tags):

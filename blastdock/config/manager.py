@@ -202,14 +202,18 @@ class ConfigManager:
         
         try:
             with self._config_lock:
-                # Create backup before saving
-                if self.config_file_path.exists():
+                # BUG-CRIT-001 FIX: Avoid race condition (TOCTOU) by using try-except instead of exists() check
+                # Create backup before saving (if config exists)
+                try:
                     current_config = self.persistence.load_config(self.config_file_path.name)
                     self.backup_manager.create_backup(
-                        current_config, 
+                        current_config,
                         self.profile,
                         description="Auto-backup before save"
                     )
+                except FileNotFoundError:
+                    # No existing config to backup (first save)
+                    logger.debug(f"No existing config to backup for profile '{self.profile}'")
                 
                 # Save configuration
                 config_dict = config.dict()
@@ -308,23 +312,44 @@ class ConfigManager:
                 self._config = BlastDockConfig(**original_config)
     
     def switch_profile(self, profile_name: str) -> None:
-        """Switch to a different configuration profile"""
+        """Switch to a different configuration profile
+
+        BUG-CRIT-006 FIX: Added comprehensive error handling and rollback logic
+        to prevent data loss if save or load operations fail.
+        """
         if profile_name == self.profile:
             return
-        
+
+        old_profile = self.profile
+        old_config = self._config
+
         # Save current profile if auto_save is enabled
         if self.auto_save and self._config is not None:
-            self.save_config()
-        
+            try:
+                self.save_config()
+            except Exception as e:
+                logger.error(f"Failed to save current profile '{self.profile}' before switching: {e}")
+                raise ConfigurationError(
+                    f"Cannot switch profile: failed to save current profile '{self.profile}': {e}"
+                )
+
         # Switch to new profile
-        old_profile = self.profile
         self.profile = profile_name
         self._config = None  # Force reload
-        
-        # Load new profile configuration
-        self.load_config()
-        
-        logger.info(f"Switched from profile '{old_profile}' to '{profile_name}'")
+
+        # Load new profile configuration with rollback on failure
+        try:
+            self.load_config()
+            logger.info(f"Switched from profile '{old_profile}' to '{profile_name}'")
+        except Exception as e:
+            # Rollback to old profile on load failure
+            logger.error(f"Failed to load profile '{profile_name}': {e}")
+            self.profile = old_profile
+            self._config = old_config
+            raise ConfigurationError(
+                f"Failed to switch to profile '{profile_name}': {e}. "
+                f"Rolled back to profile '{old_profile}'."
+            )
     
     def export_config(self, export_path: str, format: str = 'yaml', 
                      include_secrets: bool = False) -> None:

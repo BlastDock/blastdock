@@ -522,7 +522,10 @@ class AsyncTemplateLoader:
             # Rough estimation based on string representation length
             import sys
             return sys.getsizeof(str(template_data)) / 1024 / 1024  # MB
-        except Exception:
+        except (TypeError, ValueError, AttributeError) as e:
+            # BUG-CRIT-007 FIX: Use specific exceptions instead of generic Exception
+            # Return 0 if memory estimation fails
+            logger.debug(f"Failed to estimate memory usage: {e}")
             return 0.0
     
     def get_stats(self) -> Dict[str, Any]:

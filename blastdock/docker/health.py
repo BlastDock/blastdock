@@ -137,8 +137,14 @@ class DockerHealthChecker:
             result = self.docker_client.execute_command([
                 'docker', 'inspect', container_id, '--format', '{{json .}}'
             ])
-            
-            container_info = json.loads(result.stdout)
+
+            # BUG-CRIT-004 FIX: Add JSON parsing error handling
+            try:
+                container_info = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                health_info['issues'].append(f"Failed to parse container inspect output: {e}")
+                health_info['status'] = 'error'
+                return health_info
             
             # Basic status
             state = container_info.get('State', {})
