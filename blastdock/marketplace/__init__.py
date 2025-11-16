@@ -8,8 +8,8 @@ from .repository import TemplateRepository
 from .installer import TemplateInstaller
 
 __all__ = [
-    'TemplateMarketplace',
-    'MarketplaceTemplate',
-    'TemplateRepository',
-    'TemplateInstaller'
+    "TemplateMarketplace",
+    "MarketplaceTemplate",
+    "TemplateRepository",
+    "TemplateInstaller",
 ]

@@ -5,4 +5,4 @@ Handles port allocation, conflict detection, and resolution
 
 from .manager import PortManager
 
-__all__ = ['PortManager']
+__all__ = ["PortManager"]

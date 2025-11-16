@@ -13,12 +13,12 @@ from .performance import performance
 from .config_commands import config_group
 
 __all__ = [
-    'deploy',
-    'marketplace', 
-    'monitoring',
-    'templates', 
-    'diagnostics', 
-    'security', 
-    'performance',
-    'config_group'
+    "deploy",
+    "marketplace",
+    "monitoring",
+    "templates",
+    "diagnostics",
+    "security",
+    "performance",
+    "config_group",
 ]

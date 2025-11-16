@@ -52,41 +52,41 @@ SSL_CERT_EXPIRY_WARNING_DAYS = 30
 SSL_CERT_RENEWAL_DAYS = 7
 
 # Validation Patterns
-DOMAIN_PATTERN = r'^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$'
-PROJECT_NAME_PATTERN = r'^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$'
-EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+DOMAIN_PATTERN = r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$"
+PROJECT_NAME_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9_-]*[a-zA-Z0-9]$"
+EMAIL_PATTERN = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
 # Template Categories
 TEMPLATE_CATEGORIES = {
-    'web': ['wordpress', 'ghost', 'drupal', 'joomla', 'nextcloud', 'wikijs'],
-    'database': ['mysql', 'postgresql', 'mongodb', 'redis', 'influxdb', 'cockroachdb'],
-    'monitoring': ['grafana', 'prometheus', 'metabase', 'matomo', 'plausible'],
-    'development': ['gitlab', 'gitea', 'jenkins', 'drone', 'sonarqube'],
-    'communication': ['mattermost', 'rocketchat', 'matrix'],
-    'media': ['jellyfin', 'plex', 'airsonic', 'photoprism'],
+    "web": ["wordpress", "ghost", "drupal", "joomla", "nextcloud", "wikijs"],
+    "database": ["mysql", "postgresql", "mongodb", "redis", "influxdb", "cockroachdb"],
+    "monitoring": ["grafana", "prometheus", "metabase", "matomo", "plausible"],
+    "development": ["gitlab", "gitea", "jenkins", "drone", "sonarqube"],
+    "communication": ["mattermost", "rocketchat", "matrix"],
+    "media": ["jellyfin", "plex", "airsonic", "photoprism"],
 }
 
 # Error Messages
 ERROR_MESSAGES = {
-    'docker_not_running': "Docker daemon is not running. Please start Docker and try again.",
-    'template_not_found': "Template '{template}' not found. Use 'blastdock templates' to see available templates.",
-    'project_not_found': "Project '{project}' not found. Use 'blastdock list' to see existing projects.",
-    'domain_invalid': "Invalid domain format: {domain}",
-    'port_in_use': "Port {port} is already in use by another service.",
-    'traefik_not_installed': "Traefik is not installed. Use 'blastdock traefik install' to install it.",
-    'ssl_cert_error': "SSL certificate error for domain {domain}: {error}",
-    'network_error': "Network connectivity error: {error}",
+    "docker_not_running": "Docker daemon is not running. Please start Docker and try again.",
+    "template_not_found": "Template '{template}' not found. Use 'blastdock templates' to see available templates.",
+    "project_not_found": "Project '{project}' not found. Use 'blastdock list' to see existing projects.",
+    "domain_invalid": "Invalid domain format: {domain}",
+    "port_in_use": "Port {port} is already in use by another service.",
+    "traefik_not_installed": "Traefik is not installed. Use 'blastdock traefik install' to install it.",
+    "ssl_cert_error": "SSL certificate error for domain {domain}: {error}",
+    "network_error": "Network connectivity error: {error}",
 }
 
 # Success Messages
 SUCCESS_MESSAGES = {
-    'project_created': "✓ Successfully created project '{project}'",
-    'project_deployed': "✓ Successfully deployed '{project}'",
-    'project_stopped': "✓ Successfully stopped '{project}'",
-    'project_removed': "✓ Successfully removed '{project}'",
-    'traefik_installed': "✓ Traefik installed successfully",
-    'ssl_cert_issued': "✓ SSL certificate issued for {domain}",
-    'migration_complete': "✓ Migration to Traefik completed successfully",
+    "project_created": "✓ Successfully created project '{project}'",
+    "project_deployed": "✓ Successfully deployed '{project}'",
+    "project_stopped": "✓ Successfully stopped '{project}'",
+    "project_removed": "✓ Successfully removed '{project}'",
+    "traefik_installed": "✓ Traefik installed successfully",
+    "ssl_cert_issued": "✓ SSL certificate issued for {domain}",
+    "migration_complete": "✓ Migration to Traefik completed successfully",
 }
 
 # Timeouts (in seconds)

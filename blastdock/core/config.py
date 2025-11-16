@@ -12,18 +12,18 @@ from ..config import (
     LoggingConfig,
     DockerConfig,
     SecurityConfig,
-    TemplateConfig
+    TemplateConfig,
 )
 
 # Re-export for backward compatibility
 __all__ = [
-    'ConfigManager',
-    'get_config_manager',
-    'get_config',
-    'BlastDockConfig',
-    'DefaultPortsConfig',
-    'LoggingConfig',
-    'DockerConfig',
-    'SecurityConfig',
-    'TemplateConfig'
+    "ConfigManager",
+    "get_config_manager",
+    "get_config",
+    "BlastDockConfig",
+    "DefaultPortsConfig",
+    "LoggingConfig",
+    "DockerConfig",
+    "SecurityConfig",
+    "TemplateConfig",
 ]

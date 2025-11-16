@@ -10,24 +10,20 @@ import docker
 from docker.errors import DockerException, NotFound, APIError
 
 from .logging import get_logger
-from ..docker.errors import (
-    DockerError,
-    DockerNotFoundError,
-    DockerNotRunningError
-)
+from ..docker.errors import DockerError, DockerNotFoundError, DockerNotRunningError
 
 logger = get_logger(__name__)
 
 
 class EnhancedDockerClient:
     """Enhanced Docker client with comprehensive functionality"""
-    
+
     def __init__(self):
         """Initialize Docker client"""
         self.logger = get_logger(__name__)
         self._client = None
         self._compose_manager = None
-        
+
     @property
     def client(self):
         """Get Docker client instance"""
@@ -38,7 +34,7 @@ class EnhancedDockerClient:
                 self.logger.error(f"Failed to connect to Docker: {e}")
                 raise DockerNotRunningError("Docker is not running or accessible")
         return self._client
-    
+
     def is_running(self) -> bool:
         """Check if Docker daemon is running"""
         try:
@@ -46,11 +42,11 @@ class EnhancedDockerClient:
             return True
         except Exception:
             return False
-    
+
     def is_docker_running(self) -> bool:
         """Alias for is_running() to maintain interface consistency"""
         return self.is_running()
-    
+
     def get_container_by_name(self, name: str):
         """Get container by name"""
         try:
@@ -60,7 +56,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error getting container {name}: {e}")
             return None
-    
+
     def list_containers(self, all: bool = False) -> List[Any]:
         """List all containers"""
         try:
@@ -68,7 +64,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error listing containers: {e}")
             return []
-    
+
     def get_container_stats(self, container_name: str) -> Dict[str, Any]:
         """Get container stats"""
         container = self.get_container_by_name(container_name)
@@ -78,28 +74,28 @@ class EnhancedDockerClient:
             except Exception as e:
                 self.logger.error(f"Error getting stats for {container_name}: {e}")
         return {}
-    
+
     def get_container_logs(self, container_name: str, tail: int = 100) -> str:
         """Get container logs"""
         container = self.get_container_by_name(container_name)
         if container:
             try:
-                return container.logs(tail=tail).decode('utf-8')
+                return container.logs(tail=tail).decode("utf-8")
             except Exception as e:
                 self.logger.error(f"Error getting logs for {container_name}: {e}")
         return ""
-    
+
     def execute_command(self, container_name: str, command: List[str]) -> str:
         """Execute command in container"""
         container = self.get_container_by_name(container_name)
         if container:
             try:
                 result = container.exec_run(command)
-                return result.output.decode('utf-8')
+                return result.output.decode("utf-8")
             except Exception as e:
                 self.logger.error(f"Error executing command in {container_name}: {e}")
         return ""
-    
+
     def stop_container(self, container_name: str):
         """Stop a container"""
         container = self.get_container_by_name(container_name)
@@ -110,7 +106,7 @@ class EnhancedDockerClient:
             except Exception as e:
                 self.logger.error(f"Error stopping container {container_name}: {e}")
         return False
-    
+
     def remove_container(self, container_name: str, force: bool = False):
         """Remove a container"""
         container = self.get_container_by_name(container_name)
@@ -121,7 +117,7 @@ class EnhancedDockerClient:
             except Exception as e:
                 self.logger.error(f"Error removing container {container_name}: {e}")
         return False
-    
+
     def create_network(self, name: str, driver: str = "bridge") -> bool:
         """Create a Docker network"""
         try:
@@ -130,7 +126,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error creating network {name}: {e}")
             return False
-    
+
     def get_network(self, name: str):
         """Get network by name"""
         try:
@@ -140,7 +136,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error getting network {name}: {e}")
             return None
-    
+
     def list_images(self) -> List[Any]:
         """List all images"""
         try:
@@ -148,7 +144,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error listing images: {e}")
             return []
-    
+
     def pull_image(self, image_name: str) -> bool:
         """Pull an image"""
         try:
@@ -157,7 +153,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error pulling image {image_name}: {e}")
             return False
-    
+
     def get_docker_info(self) -> Dict[str, Any]:
         """Get Docker system info"""
         try:
@@ -165,7 +161,7 @@ class EnhancedDockerClient:
         except Exception as e:
             self.logger.error(f"Error getting Docker info: {e}")
             return {}
-    
+
     def get_docker_version(self) -> Dict[str, Any]:
         """Get Docker version info"""
         try:
