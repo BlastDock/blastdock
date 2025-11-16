@@ -53,13 +53,20 @@ class NetworkManager:
             result = self.docker_client.execute_command([
                 'docker', 'network', 'inspect', network_name, '--format', '{{json .}}'
             ])
-            
-            network_info = json.loads(result.stdout)
-            
+
+            # BUG-ERR-001 FIX: Specific JSON error handling
+            try:
+                network_info = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                raise NetworkError(
+                    f"Failed to parse network JSON data: {e}",
+                    network_name=network_name
+                )
+
             # Handle both single network and array responses
             if isinstance(network_info, list):
                 network_info = network_info[0] if network_info else {}
-            
+
             # Extract useful information
             extracted_info = {
                 'id': network_info.get('Id', ''),
@@ -75,12 +82,14 @@ class NetworkManager:
                 'options': network_info.get('Options', {}),
                 'labels': network_info.get('Labels', {})
             }
-            
+
             return extracted_info
-            
+
+        except NetworkError:
+            raise
         except Exception as e:
             raise NetworkError(
-                f"Failed to get network information",
+                f"Failed to get network information: {e}",
                 network_name=network_name
             )
     

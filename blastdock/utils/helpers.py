@@ -13,9 +13,24 @@ from .filesystem import (
 )
 
 def load_yaml(file_path):
-    """Load YAML file"""
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f)
+    """Load YAML file with validation"""
+    # BUG-ERR-002 FIX: Add input validation
+    if not file_path:
+        raise ValueError("file_path cannot be empty")
+
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"YAML file not found: {file_path}")
+    if not path.is_file():
+        raise ValueError(f"Path is not a file: {file_path}")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return yaml.safe_load(f)
+    except yaml.YAMLError as e:
+        raise ValueError(f"Invalid YAML in {file_path}: {e}")
+    except PermissionError as e:
+        raise PermissionError(f"Cannot read {file_path}: {e}")
 
 def save_yaml(data, file_path):
     """Save data to YAML file"""
@@ -25,9 +40,24 @@ def save_yaml(data, file_path):
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True)
 
 def load_json(file_path):
-    """Load JSON file"""
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    """Load JSON file with validation"""
+    # BUG-ERR-002 FIX: Add input validation
+    if not file_path:
+        raise ValueError("file_path cannot be empty")
+
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"JSON file not found: {file_path}")
+    if not path.is_file():
+        raise ValueError(f"Path is not a file: {file_path}")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in {file_path}: {e}")
+    except PermissionError as e:
+        raise PermissionError(f"Cannot read {file_path}: {e}")
 
 def save_json(data, file_path):
     """Save data to JSON file"""

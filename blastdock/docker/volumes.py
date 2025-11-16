@@ -54,13 +54,20 @@ class VolumeManager:
             result = self.docker_client.execute_command([
                 'docker', 'volume', 'inspect', volume_name, '--format', '{{json .}}'
             ])
-            
-            volume_info = json.loads(result.stdout)
-            
+
+            # BUG-ERR-001 FIX: Specific JSON error handling
+            try:
+                volume_info = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                raise VolumeError(
+                    f"Failed to parse volume JSON data: {e}",
+                    volume_name=volume_name
+                )
+
             # Handle both single volume and array responses
             if isinstance(volume_info, list):
                 volume_info = volume_info[0] if volume_info else {}
-            
+
             # Extract useful information
             extracted_info = {
                 'name': volume_info.get('Name', ''),
@@ -73,9 +80,11 @@ class VolumeManager:
                 'options': volume_info.get('Options', {}),
                 'usage_data': volume_info.get('UsageData', {})
             }
-            
+
             return extracted_info
-            
+
+        except VolumeError:
+            raise
         except Exception as e:
             raise VolumeError(
                 f"Failed to get volume information",

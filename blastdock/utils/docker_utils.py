@@ -174,6 +174,34 @@ class EnhancedDockerClient:
             self.logger.error(f"Error getting Docker version: {e}")
             return {}
 
+    # BUG-LEAK-001 FIX: Add resource cleanup methods
+    def close(self):
+        """Close Docker client connection and cleanup resources"""
+        if self._client is not None:
+            try:
+                self._client.close()
+                self.logger.debug("Docker client connection closed")
+            except Exception as e:
+                self.logger.debug(f"Error closing Docker client: {e}")
+            finally:
+                self._client = None
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - cleanup resources"""
+        self.close()
+        return False
+
+    def __del__(self):
+        """Cleanup on deletion"""
+        try:
+            self.close()
+        except Exception:
+            pass  # Ignore errors in __del__
+
 
 # Compatibility aliases
 DockerClient = EnhancedDockerClient
