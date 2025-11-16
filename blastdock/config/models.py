@@ -515,7 +515,7 @@ class BlastDockConfig(BaseModel):
 
         def flatten_config(obj, prefix="BLASTDOCK"):
             if isinstance(obj, BaseModel):
-                for key, value in obj.dict().items():
+                for key, value in obj.model_dump().items():
                     env_key = f"{prefix}_{key.upper()}"
                     if isinstance(value, dict):
                         flatten_config(value, env_key)

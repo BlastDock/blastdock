@@ -60,7 +60,7 @@ def show_config(
                 console.print(f"[red]Configuration section '{section}' not found[/red]")
                 sys.exit(1)
         else:
-            config_data = config.dict()
+            config_data = config.model_dump()
 
         # Hide sensitive data if requested
         if no_sensitive:
@@ -174,7 +174,7 @@ def validate_config(profile: str, section: Optional[str], suggestions: bool):
 
         if section:
             issues = config_manager.validator.validate_section(
-                config_manager.config.dict(), section
+                config_manager.config.model_dump(), section
             )
         else:
             issues = config_manager.validate_current_config()
@@ -188,7 +188,7 @@ def validate_config(profile: str, section: Optional[str], suggestions: bool):
 
         if suggestions:
             suggestions_list = config_manager.validator.get_validation_suggestions(
-                config_manager.config.dict()
+                config_manager.config.model_dump()
             )
             if suggestions_list:
                 console.print("\n[blue]Suggestions for improvement:[/blue]")
@@ -381,7 +381,7 @@ def create_backup(profile: str, description: Optional[str], compress: bool):
         config_manager = get_config_manager(profile)
         backup_manager = ConfigBackup()
 
-        config_data = config_manager.config.dict()
+        config_data = config_manager.config.model_dump()
         backup_file = backup_manager.create_backup(
             config_data, profile, description, compress
         )
