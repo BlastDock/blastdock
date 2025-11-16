@@ -27,21 +27,23 @@ class MemoryOptimizer:
             "MemoryOptimizer.get_memory_stats() returns placeholder data only. "
             "Real memory monitoring is not implemented. Use 'docker stats' or 'psutil' for actual monitoring.",
             category=UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         logger.warning("QUAL-007: Returning placeholder memory stats (not real data)")
 
         return {
-            'total_memory': 8192,
-            'used_memory': 2048,
-            'available_memory': 6144,
-            'blastdock_usage': 128,
-            'docker_usage': 1920,
-            'optimization_score': 92,
-            '_warning': 'PLACEHOLDER DATA - NOT REAL MEMORY STATS'
+            "total_memory": 8192,
+            "used_memory": 2048,
+            "available_memory": 6144,
+            "blastdock_usage": 128,
+            "docker_usage": 1920,
+            "optimization_score": 92,
+            "_warning": "PLACEHOLDER DATA - NOT REAL MEMORY STATS",
         }
 
+
 _memory_optimizer = None
+
 
 def get_memory_optimizer():
     """Get memory optimizer instance"""

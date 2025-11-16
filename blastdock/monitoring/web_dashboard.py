@@ -3,6 +3,7 @@
 try:
     from flask import Flask, render_template_string, jsonify, request
     from flask_cors import CORS
+
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -11,43 +12,45 @@ from ..utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+
 class WebDashboard:
     """Web dashboard for monitoring"""
-    
+
     def __init__(self):
         self.logger = logger
         self.app = None
-        
+
         if FLASK_AVAILABLE:
             self._setup_flask()
         else:
             logger.warning("Flask not available - web dashboard disabled")
-    
+
     def _setup_flask(self):
         """Setup Flask app"""
         self.app = Flask(__name__)
         # VUL-002 FIX: Restrict CORS to localhost only for security
-        CORS(self.app, resources={
-            r"/api/*": {
-                "origins": ["http://localhost:*", "http://127.0.0.1:*"]
-            }
-        })
+        CORS(
+            self.app,
+            resources={
+                r"/api/*": {"origins": ["http://localhost:*", "http://127.0.0.1:*"]}
+            },
+        )
         self._register_routes()
-    
+
     def _register_routes(self):
         """Register Flask routes"""
         if not self.app:
             return
-        
-        @self.app.route('/')
+
+        @self.app.route("/")
         def dashboard():
             return "BlastDock Dashboard"
-        
-        @self.app.route('/api/status')
+
+        @self.app.route("/api/status")
         def status():
-            return jsonify({'status': 'ok'})
-    
-    def start_dashboard(self, host='127.0.0.1', port=5000, debug=False):
+            return jsonify({"status": "ok"})
+
+    def start_dashboard(self, host="127.0.0.1", port=5000, debug=False):
         """Start the dashboard
 
         Args:
@@ -63,20 +66,24 @@ class WebDashboard:
             # VUL-004 FIX: Never enable debug mode to prevent information disclosure
             # Debug mode exposes sensitive information and debugging endpoints
             self.app.run(host=host, port=port, debug=False)
-            logger.info(f"Dashboard started on {host}:{port} (debug disabled for security)")
+            logger.info(
+                f"Dashboard started on {host}:{port} (debug disabled for security)"
+            )
             return True
         return False
-    
+
     def get_dashboard_status(self):
         """Get dashboard status"""
         return {
-            'flask_available': FLASK_AVAILABLE,
-            'dashboard_running': self.app is not None,
-            'host': '127.0.0.1',
-            'port': 5000
+            "flask_available": FLASK_AVAILABLE,
+            "dashboard_running": self.app is not None,
+            "host": "127.0.0.1",
+            "port": 5000,
         }
 
+
 _dashboard = None
+
 
 def get_web_dashboard():
     """Get web dashboard instance"""

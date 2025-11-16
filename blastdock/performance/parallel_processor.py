@@ -30,19 +30,23 @@ class ParallelProcessor:
             "ParallelProcessor.process_templates_parallel() returns placeholder data only. "
             "No actual parallel processing is implemented. Templates are NOT processed.",
             category=UserWarning,
-            stacklevel=2
+            stacklevel=2,
         )
-        logger.warning(f"QUAL-009: Returning placeholder parallel processing stats for {len(templates)} templates (not real data)")
+        logger.warning(
+            f"QUAL-009: Returning placeholder parallel processing stats for {len(templates)} templates (not real data)"
+        )
 
         return {
-            'processed': len(templates),
-            'time_taken': 2.5,
-            'parallel_jobs': 4,
-            'efficiency': 85.2,
-            '_warning': 'PLACEHOLDER DATA - NO ACTUAL PARALLEL PROCESSING OCCURRED'
+            "processed": len(templates),
+            "time_taken": 2.5,
+            "parallel_jobs": 4,
+            "efficiency": 85.2,
+            "_warning": "PLACEHOLDER DATA - NO ACTUAL PARALLEL PROCESSING OCCURRED",
         }
 
+
 _parallel_processor = None
+
 
 def get_parallel_processor():
     """Get parallel processor instance"""

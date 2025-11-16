@@ -3,9 +3,11 @@
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
+
 @dataclass
 class ProjectConfig:
     """Project configuration model"""
+
     name: str
     template: str
     config: Dict[str, Any]
