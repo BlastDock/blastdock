@@ -166,23 +166,33 @@ class Port(BaseModel):
         return self.allocation.service if self.allocation else None
     
     def check_availability(self) -> bool:
-        """Check if port is actually available by testing connection"""
+        """Check if port is actually available by testing connection
+
+        BUG-CRIT-003 FIX: Use context manager to prevent socket resource leak
+        """
         try:
             import socket
-            
-            # Test TCP connection
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex(('localhost', self.number))
-            sock.close()
-            
-            self.is_listening = (result == 0)
-            self.last_checked = datetime.now()
-            
-            return result != 0  # Available if connection fails
-            
-        except Exception:
+
+            # Test TCP connection - using context manager to ensure socket cleanup
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(1)
+                result = sock.connect_ex(('localhost', self.number))
+
+                self.is_listening = (result == 0)
+                self.last_checked = datetime.now()
+
+                return result != 0  # Available if connection fails
+
+        except (OSError, socket.error) as e:
+            # Specific exception handling instead of generic Exception
+            import logging
+            logging.getLogger(__name__).debug(f"Port {self.number} check failed: {e}")
             return True  # Assume available if check fails
+        except Exception as e:
+            # Catch other unexpected exceptions but log them
+            import logging
+            logging.getLogger(__name__).warning(f"Unexpected error checking port {self.number}: {e}")
+            return True
     
     def get_process_info(self) -> Optional[Dict[str, str]]:
         """Get information about process using this port"""
@@ -208,23 +218,32 @@ class Port(BaseModel):
             return None
     
     def suggest_alternative(self, start_range: int = 8000, end_range: int = 9000) -> Optional[int]:
-        """Suggest alternative port in specified range"""
+        """Suggest alternative port in specified range
+
+        BUG-CRIT-003 FIX: Use context manager to prevent socket resource leak
+        """
         import socket
-        
+
         for port in range(start_range, end_range + 1):
             if port == self.number:
                 continue
-            
+
             try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(1)
-                result = sock.connect_ex(('localhost', port))
-                sock.close()
-                
-                if result != 0:  # Port is available
-                    return port
-                    
-            except Exception:
+                # Use context manager to ensure socket cleanup
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                    sock.settimeout(1)
+                    result = sock.connect_ex(('localhost', port))
+
+                    if result != 0:  # Port is available
+                        return port
+
+            except (OSError, socket.error):
+                # Socket error on this port, try next one
                 continue
-        
+            except Exception as e:
+                # Log unexpected exceptions
+                import logging
+                logging.getLogger(__name__).debug(f"Error checking port {port}: {e}")
+                continue
+
         return None

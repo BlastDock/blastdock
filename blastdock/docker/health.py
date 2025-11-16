@@ -91,8 +91,12 @@ class DockerHealthChecker:
                                 size_str = parts[2]
                                 if 'GB' in size_str:
                                     try:
+                                        # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                                         size_gb = float(size_str.replace('GB', ''))
-                                        if size_gb > 10:
+                                        if size_gb != size_gb or size_gb in (float('inf'), float('-inf')):
+                                            # NaN or Infinity detected, skip
+                                            pass
+                                        elif size_gb > 10:
                                             health_report['recommendations'].append(
                                                 f"High disk usage detected: {size_str}"
                                             )
@@ -185,16 +189,22 @@ class DockerHealthChecker:
                 # Check for resource issues
                 cpu_str = stats.get('CPUPerc', '0%').replace('%', '')
                 try:
+                    # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                     cpu_percent = float(cpu_str)
-                    if cpu_percent > 80:
+                    if cpu_percent != cpu_percent or cpu_percent in (float('inf'), float('-inf')):
+                        pass  # Skip invalid values
+                    elif cpu_percent > 80:
                         health_info['issues'].append(f"High CPU usage: {cpu_percent}%")
                 except ValueError:
                     pass
-                
+
                 mem_str = stats.get('MemPerc', '0%').replace('%', '')
                 try:
+                    # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                     mem_percent = float(mem_str)
-                    if mem_percent > 90:
+                    if mem_percent != mem_percent or mem_percent in (float('inf'), float('-inf')):
+                        pass  # Skip invalid values
+                    elif mem_percent > 90:
                         health_info['issues'].append(f"High memory usage: {mem_percent}%")
                 except ValueError:
                     pass
@@ -469,8 +479,15 @@ class DockerHealthChecker:
         return performance_data
     
     def _parse_percentage(self, percent_str: str) -> float:
-        """Parse percentage string to float"""
+        """Parse percentage string to float
+
+        BUG-HIGH-002 FIX: Validate for NaN/Infinity values
+        """
         try:
-            return float(percent_str.replace('%', ''))
+            value = float(percent_str.replace('%', ''))
+            # Check for NaN or Infinity
+            if value != value or value in (float('inf'), float('-inf')):
+                return 0.0
+            return value
         except ValueError:
             return 0.0
