@@ -160,7 +160,7 @@ class ProfileManager:
             if copy_settings and base_profile in self._profile_cache:
                 base_config = self._load_profile_config(base_profile)
             else:
-                base_config = BlastDockConfig().dict()
+                base_config = BlastDockConfig().model_dump()
 
             # Add profile metadata
             base_config["_profile_metadata"] = {

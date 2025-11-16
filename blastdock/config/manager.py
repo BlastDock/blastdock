@@ -235,7 +235,7 @@ class ConfigManager:
                     )
 
                 # Save configuration
-                config_dict = config.dict()
+                config_dict = config.model_dump()
                 self.persistence.save_config(config_dict, self.config_file_path.name)
 
                 # Update cached config
@@ -295,13 +295,13 @@ class ConfigManager:
                 else:
                     # Reset specific sections
                     default_config = BlastDockConfig()
-                    current_dict = self.config.dict()
+                    current_dict = self.config.model_dump()
 
                     for section in sections:
                         if hasattr(default_config, section):
                             current_dict[section] = getattr(
                                 default_config, section
-                            ).dict()
+                            ).model_dump()
 
                     self._config = BlastDockConfig(**current_dict)
 
@@ -318,7 +318,7 @@ class ConfigManager:
     @contextmanager
     def temporary_config(self, **overrides):
         """Context manager for temporary configuration changes"""
-        original_config = self.config.dict()
+        original_config = self.config.model_dump()
 
         try:
             # Apply temporary overrides
@@ -382,7 +382,7 @@ class ConfigManager:
         self, export_path: str, format: str = "yaml", include_secrets: bool = False
     ) -> None:
         """Export configuration to file"""
-        config_dict = self.config.dict()
+        config_dict = self.config.model_dump()
 
         # Remove secrets if not requested
         if not include_secrets:
@@ -397,7 +397,7 @@ class ConfigManager:
 
         if merge:
             # Merge with current configuration
-            current_dict = self.config.dict()
+            current_dict = self.config.model_dump()
             merged_dict = self._deep_merge_configs(current_dict, imported_config)
             new_config = BlastDockConfig(**merged_dict)
         else:
@@ -515,7 +515,7 @@ class ConfigManager:
 
     def validate_current_config(self) -> List[str]:
         """Validate current configuration and return any issues"""
-        config_dict = self.config.dict()
+        config_dict = self.config.model_dump()
         return self.validator.validate_config(config_dict)
 
     def cleanup_old_backups(self, max_age_days: int = 30, max_count: int = 10) -> int:
