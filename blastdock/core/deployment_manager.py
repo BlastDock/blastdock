@@ -5,6 +5,7 @@ Deployment management system
 import os
 import shutil
 import logging
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -137,7 +138,13 @@ class DeploymentManager:
         
         try:
             return load_json(metadata_file)
-        except Exception:
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            # BUG-004 FIX: Provide specific exception handling with logging
+            self.logger.debug(f"Metadata file not found or invalid for {project_name}: {e}")
+            return {}
+        except Exception as e:
+            # BUG-004 FIX: Log unexpected errors to aid debugging
+            self.logger.error(f"Unexpected error loading metadata from {metadata_file}: {e}")
             return {}
     
     def get_project_template(self, project_name):
@@ -322,8 +329,17 @@ class DeploymentManager:
         try:
             from .config import get_config
             return get_config()
-        except Exception:
-            # Fallback mock config if import or get_config fails
+        except ImportError as e:
+            # BUG-004 FIX: Specific handling for import errors with logging
+            self.logger.debug(f"Config module not available, using fallback: {e}")
+            # Fallback mock config if import fails
+            class MockConfig:
+                projects_dir = "~/blastdock/projects"
+            return MockConfig()
+        except Exception as e:
+            # BUG-004 FIX: Log unexpected config loading errors
+            self.logger.error(f"Unexpected error loading configuration: {e}")
+            # Fallback mock config if get_config fails
             class MockConfig:
                 projects_dir = "~/blastdock/projects"
             return MockConfig()

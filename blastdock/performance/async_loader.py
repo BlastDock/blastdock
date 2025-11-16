@@ -407,32 +407,48 @@ class AsyncTemplateLoader:
         
         # Check if file has been modified
         try:
-            current_mtime = Path(template_path).stat().st_mtime
+            # BUG-003 FIX: Check if file exists before calling stat() to prevent FileNotFoundError
+            template_path_obj = Path(template_path)
+            if not template_path_obj.exists():
+                # Template file no longer exists, invalidate cache
+                self.cache_manager.delete(cache_key)
+                return None
+
+            current_mtime = template_path_obj.stat().st_mtime
             cached_mtime = cached_data.get('_metadata', {}).get('file_mtime', 0)
-            
+
             if current_mtime > cached_mtime:
                 # File has been modified, invalidate cache
                 self.cache_manager.delete(cache_key)
                 return None
-            
+
             return LoadResult(
                 template_name=template_name,
                 success=True,
                 data=cached_data,
                 load_time=0.0  # Cache hit
             )
-            
-        except Exception:
+
+        except Exception as e:
+            self.logger.debug(f"Error checking cache for {template_name}: {e}")
             return None
     
     async def _cache_result(self, template_name: str, template_data: Dict[str, Any], load_time: float):
         """Cache template loading result"""
         cache_key = f"async_template:{template_name}"
-        
+
         # Add cache metadata
-        template_data['_metadata']['file_mtime'] = Path(template_data['_metadata']['source_path']).stat().st_mtime
+        # BUG-003 FIX: Check if source file exists before calling stat()
+        source_path = Path(template_data['_metadata']['source_path'])
+        if source_path.exists():
+            template_data['_metadata']['file_mtime'] = source_path.stat().st_mtime
+        else:
+            import time
+            template_data['_metadata']['file_mtime'] = time.time()
+            self.logger.warning(f"Template file no longer exists during caching: {source_path}")
+
         template_data['_metadata']['load_time'] = load_time
-        
+
         # Cache with 1 hour TTL
         self.cache_manager.set(
             cache_key,

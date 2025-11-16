@@ -42,8 +42,9 @@ class DomainManager:
             Domain configuration dictionary
         """
         # Extract domain settings from user config
-        custom_domain = user_config.get('domain', '').strip()
-        subdomain = user_config.get('subdomain', project_name).strip()
+        # BUG-001 FIX: Handle None values from user_config to prevent AttributeError
+        custom_domain = (user_config.get('domain') or '').strip()
+        subdomain = (user_config.get('subdomain') or project_name or '').strip()
         ssl_enabled = user_config.get('ssl_enabled', True)
         
         # Sanitize subdomain

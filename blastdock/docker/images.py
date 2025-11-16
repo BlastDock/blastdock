@@ -474,14 +474,21 @@ class ImageManager:
         start_time = time.time()
         
         try:
-            with open(output_file, 'wb') as f:
-                result = self.docker_client.execute_command([
-                    'docker', 'save', image_name
-                ], capture_output=False)
-                
-                # Note: This is a simplified version. In practice, you'd want to
-                # redirect stdout to the file or use subprocess.Popen for better control
-            
+            # BUG-002 FIX: Use subprocess.run with proper file output redirection
+            import subprocess
+            result = subprocess.run(
+                ['docker', 'save', image_name, '-o', output_file],
+                capture_output=True,
+                text=True,
+                timeout=600
+            )
+
+            if result.returncode != 0:
+                raise ImageError(
+                    f"Failed to save image {image_name}: {result.stderr}",
+                    image_name=image_name
+                )
+
             save_result['success'] = True
             save_result['save_time'] = time.time() - start_time
             
@@ -514,11 +521,21 @@ class ImageManager:
         start_time = time.time()
         
         try:
-            with open(input_file, 'rb') as f:
-                result = self.docker_client.execute_command([
-                    'docker', 'load'
-                ], capture_output=True)
-            
+            # BUG-002 FIX: Use subprocess.run with proper file input redirection
+            import subprocess
+            result = subprocess.run(
+                ['docker', 'load', '-i', input_file],
+                capture_output=True,
+                text=True,
+                timeout=600
+            )
+
+            if result.returncode != 0:
+                raise ImageError(
+                    f"Failed to load image from {input_file}: {result.stderr}",
+                    input_file=input_file
+                )
+
             load_result['success'] = True
             load_result['load_time'] = time.time() - start_time
             
