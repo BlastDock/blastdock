@@ -113,7 +113,13 @@ class PortManager:
                 sock.settimeout(1)
                 result = sock.connect_ex(('127.0.0.1', port))
                 return result == 0
-        except Exception:
+        except socket.error as e:
+            # BUG-006 FIX: Log socket errors for debugging
+            logger.debug(f"Socket error checking port {port}: {e}")
+            return False
+        except Exception as e:
+            # BUG-006 FIX: Log unexpected errors
+            logger.warning(f"Unexpected error checking port {port}: {e}")
             return False
     
     def allocate_port(self, project_name: str, service_name: str,
@@ -499,8 +505,15 @@ class PortManager:
                                 'address': parts[3],
                                 'process': parts[6] if parts[6] != '-' else 'unknown'
                             }
-        except Exception:
-            pass
+        except subprocess.TimeoutExpired as e:
+            # BUG-006 FIX: Log timeout errors
+            logger.debug(f"Timeout checking port process info with netstat for port {port}: {e}")
+        except FileNotFoundError:
+            # BUG-006 FIX: netstat command not found (expected on some systems)
+            logger.debug(f"netstat command not found")
+        except Exception as e:
+            # BUG-006 FIX: Log unexpected errors
+            logger.debug(f"Error getting port process info with netstat for port {port}: {e}")
         
         # Fallback to lsof
         try:
@@ -519,9 +532,16 @@ class PortManager:
                         'command': parts[0] if len(parts) > 0 else 'unknown',
                         'pid': parts[1] if len(parts) > 1 else 'unknown'
                     }
-        except Exception:
-            pass
-        
+        except subprocess.TimeoutExpired as e:
+            # BUG-006 FIX: Log timeout errors
+            logger.debug(f"Timeout checking port process info with lsof for port {port}: {e}")
+        except FileNotFoundError:
+            # BUG-006 FIX: lsof command not found (expected on some systems)
+            logger.debug(f"lsof command not found")
+        except Exception as e:
+            # BUG-006 FIX: Log unexpected errors
+            logger.debug(f"Error getting port process info with lsof for port {port}: {e}")
+
         return {'process': 'unknown'}
     
     def _check_docker_port_conflicts(self, port: int) -> List[Dict[str, Any]]:
@@ -566,6 +586,11 @@ class PortManager:
     def set_dynamic_range(self, start_port: int, end_port: int) -> bool:
         """Set the dynamic port allocation range"""
         try:
+            # BUG-013 FIX: Validate start_port is >= 1
+            if start_port < 1:
+                logger.error("Start port must be >= 1")
+                return False
+
             if start_port >= end_port:
                 logger.error("Start port must be less than end port")
                 return False

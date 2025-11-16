@@ -4,7 +4,8 @@ Monitoring and status checking system
 
 from ..utils.docker_utils import DockerClient
 from .deployment_manager import DeploymentManager
-from ..exceptions import ProjectNotFoundError
+from ..exceptions import ProjectNotFoundError, DockerError
+from ..utils.logging import get_logger
 from rich.text import Text
 from rich.table import Table
 
@@ -12,6 +13,7 @@ class Monitor:
     def __init__(self):
         self.docker_client = DockerClient()
         self.deployment_manager = DeploymentManager()
+        self.logger = get_logger(__name__)
     
     def get_status(self, project_name):
         """Get simple status of a project"""
@@ -33,8 +35,14 @@ class Monitor:
                 return f"Partial ({running_count}/{total_count})"
             else:
                 return "Stopped"
-        
-        except Exception:
+
+        except DockerError as e:
+            # BUG-005 FIX: Specific exception handling with logging for Docker errors
+            self.logger.error(f"Docker error getting status for {project_name}: {e}")
+            return "Docker Error"
+        except Exception as e:
+            # BUG-005 FIX: Log unexpected errors to aid debugging
+            self.logger.error(f"Unexpected error getting status for {project_name}: {e}")
             return "Error"
     
     def get_detailed_status(self, project_name):
@@ -113,7 +121,13 @@ class Monitor:
                 'container_count': len(containers),
                 'running_count': sum(1 for c in containers if c['status'] == 'running')
             }
-        except Exception:
+        except DockerError as e:
+            # BUG-005 FIX: Log Docker errors when getting resource usage
+            self.logger.error(f"Docker error getting resource usage for {project_name}: {e}")
+            return {'container_count': 0, 'running_count': 0}
+        except Exception as e:
+            # BUG-005 FIX: Log unexpected errors to aid debugging
+            self.logger.error(f"Unexpected error getting resource usage for {project_name}: {e}")
             return {'container_count': 0, 'running_count': 0}
     
     def health_check(self, project_name):

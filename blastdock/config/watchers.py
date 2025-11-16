@@ -182,7 +182,13 @@ class ConfigWatcher:
                 content = f.read()
                 # Using MD5 for file integrity checking, not security
                 return hashlib.md5(content, usedforsecurity=False).hexdigest()
-        except Exception:
+        except IOError as e:
+            # BUG-007 FIX: Log IO errors for file reading
+            logger.warning(f"IO error reading config file {self.config_file}: {e}")
+            return ""
+        except Exception as e:
+            # BUG-007 FIX: Log unexpected errors
+            logger.error(f"Unexpected error calculating checksum for {self.config_file}: {e}")
             return ""
     
     def _update_file_state(self) -> None:
@@ -193,7 +199,15 @@ class ConfigWatcher:
                 self._last_modified = stat.st_mtime
                 self._last_size = stat.st_size
                 self._last_checksum = self._get_file_checksum()
-            except Exception:
+            except OSError as e:
+                # BUG-007 FIX: Log OS errors when checking file state
+                logger.warning(f"OS error updating file state for {self.config_file}: {e}")
+                self._last_modified = None
+                self._last_size = None
+                self._last_checksum = None
+            except Exception as e:
+                # BUG-007 FIX: Log unexpected errors
+                logger.error(f"Unexpected error updating file state for {self.config_file}: {e}")
                 self._last_modified = None
                 self._last_size = None
                 self._last_checksum = None
@@ -418,7 +432,13 @@ class ConfigChangeLogger:
         """Get file size safely"""
         try:
             return file_path.stat().st_size if file_path.exists() else None
-        except Exception:
+        except OSError as e:
+            # BUG-007 FIX: Log OS errors when getting file size
+            logger.debug(f"OS error getting file size for {file_path}: {e}")
+            return None
+        except Exception as e:
+            # BUG-007 FIX: Log unexpected errors
+            logger.warning(f"Unexpected error getting file size for {file_path}: {e}")
             return None
     
     def _write_to_log_file(self, change_record: Dict[str, Any]) -> None:
