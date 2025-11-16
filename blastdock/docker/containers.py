@@ -523,14 +523,19 @@ class ContainerManager:
             
             # Parse output for metrics
             output = result.stdout
+            import re
             if 'Total reclaimed space' in output:
-                import re
                 space_match = re.search(r'Total reclaimed space: ([\d.]+\w+)', output)
                 if space_match:
                     prune_result['space_reclaimed'] = space_match.group(1)
-            
-            # Count removed containers (rough estimate from output)
-            container_lines = [line for line in output.split('\n') if line.strip() and len(line) == 64]
+
+            # BUG-NEW-001 FIX: Use robust regex pattern for container ID detection
+            # Container IDs are hex strings of 12-64 characters (short or long form)
+            container_id_pattern = re.compile(r'^[a-f0-9]{12,64}$')
+            container_lines = [
+                line.strip() for line in output.split('\n')
+                if line.strip() and container_id_pattern.match(line.strip())
+            ]
             prune_result['containers_removed'] = len(container_lines)
             
             return prune_result
