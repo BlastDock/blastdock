@@ -43,7 +43,34 @@ class TemplateManager:
             r'exec\(',      # exec function
             r'__builtins__',  # Builtins access
         ]
-    
+
+        # BUG-NEW-001 FIX: Pattern for validating template names (alphanumeric, hyphens, underscores only)
+        self.TEMPLATE_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+    def _validate_template_name(self, template_name):
+        """Validate template name to prevent path traversal attacks (BUG-NEW-001 FIX)
+
+        Args:
+            template_name: The template name to validate
+
+        Raises:
+            TemplateValidationError: If template name contains invalid characters or path traversal sequences
+        """
+        if not template_name:
+            raise TemplateValidationError("Template name cannot be empty")
+
+        # Check for path traversal sequences
+        if '..' in template_name or '/' in template_name or '\\' in template_name:
+            raise TemplateValidationError(
+                f"Template name contains path traversal characters: {template_name}"
+            )
+
+        # Validate against allowed character pattern
+        if not self.TEMPLATE_NAME_PATTERN.match(template_name):
+            raise TemplateValidationError(
+                f"Template name contains invalid characters. Only alphanumeric, hyphens, and underscores allowed: {template_name}"
+            )
+
     def list_templates(self):
         """List available templates"""
         templates = []
@@ -55,15 +82,19 @@ class TemplateManager:
     
     def template_exists(self, template_name):
         """Check if template exists"""
+        # BUG-NEW-001 FIX: Validate template name to prevent path traversal
+        self._validate_template_name(template_name)
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         return os.path.exists(template_file)
     
     def get_template_info(self, template_name):
         """Get template information"""
+        # BUG-NEW-001 FIX: Validate template name to prevent path traversal
+        self._validate_template_name(template_name)
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         if not os.path.exists(template_file):
             return {}
-        
+
         try:
             template_data = load_yaml(template_file)
             return template_data.get('template_info', {})
@@ -73,6 +104,8 @@ class TemplateManager:
     
     def get_default_config(self, template_name):
         """Get default configuration for template"""
+        # BUG-NEW-001 FIX: Validate template name to prevent path traversal
+        self._validate_template_name(template_name)
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         if not os.path.exists(template_file):
             raise TemplateNotFoundError(template_name)
@@ -99,6 +132,8 @@ class TemplateManager:
     
     def interactive_config(self, template_name):
         """Interactive configuration for template"""
+        # BUG-NEW-001 FIX: Validate template name to prevent path traversal
+        self._validate_template_name(template_name)
         template_file = os.path.join(self.templates_dir, f"{template_name}.yml")
         if not os.path.exists(template_file):
             raise TemplateNotFoundError(template_name)
@@ -235,6 +270,9 @@ class TemplateManager:
     def render_template(self, template_name, config):
         """Render template with configuration (BUG-015 FIX: Added sanitization)"""
         try:
+            # BUG-NEW-001 FIX: Validate template name to prevent path traversal
+            self._validate_template_name(template_name)
+
             # Sanitize config before rendering to prevent template injection
             sanitized_config = self._sanitize_config(config)
 

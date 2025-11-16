@@ -554,9 +554,19 @@ _async_loader = None
 
 
 async def get_async_loader() -> AsyncTemplateLoader:
-    """Get global async template loader instance"""
+    """Get global async template loader instance (BUG-NEW-006 FIX: Added error handling)"""
     global _async_loader
     if _async_loader is None:
-        _async_loader = AsyncTemplateLoader()
-        await _async_loader.start()
+        loader = AsyncTemplateLoader()
+        try:
+            # BUG-NEW-006 FIX: If start() fails, don't set global variable to partial instance
+            await loader.start()
+            _async_loader = loader
+        except Exception as e:
+            # Cleanup any partial initialization
+            try:
+                await loader.stop()
+            except:
+                pass  # Ignore cleanup errors
+            raise RuntimeError(f"Failed to initialize async template loader: {e}") from e
     return _async_loader

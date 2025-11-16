@@ -214,35 +214,48 @@ class SecureFileOperations:
     
     def safe_copy_file(self, src_path: str, dst_path: str,
                       preserve_permissions: bool = True) -> Tuple[bool, Optional[str]]:
-        """Safely copy a file with validation"""
+        """Safely copy a file with validation (BUG-NEW-005 FIX: Added TOCTOU protection)"""
         try:
             # Validate source file
             if not os.path.exists(src_path):
                 return False, "Source file does not exist"
-            
+
             # Validate both paths
             for path in [src_path, dst_path]:
                 is_valid, error = self.validate_file_path(path)
                 if not is_valid:
                     return False, f"Invalid path {path}: {error}"
-            
+
             # Check source file size
             file_size = os.path.getsize(src_path)
             if file_size > self.MAX_CONFIG_SIZE:
                 return False, f"Source file too large: {file_size} bytes"
-            
+
             # Create destination directory
             os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            
-            # Copy file
-            if preserve_permissions:
-                shutil.copy2(src_path, dst_path)
-            else:
-                shutil.copy(src_path, dst_path)
-                os.chmod(dst_path, 0o644)
-            
-            return True, None
-            
+
+            # BUG-NEW-005 FIX: Wrap copy operations in try-except to handle TOCTOU issues
+            # If file is deleted or modified between checks and copy, handle gracefully
+            try:
+                # Copy file
+                if preserve_permissions:
+                    shutil.copy2(src_path, dst_path)
+                else:
+                    shutil.copy(src_path, dst_path)
+                    os.chmod(dst_path, 0o644)
+
+                return True, None
+
+            except FileNotFoundError:
+                return False, "Source file was deleted during copy operation"
+            except PermissionError as e:
+                return False, f"Permission denied during copy: {e}"
+            except OSError as e:
+                return False, f"OS error during copy: {e}"
+
+        except FileNotFoundError:
+            # BUG-NEW-005 FIX: File deleted between existence check and size check
+            return False, "Source file was deleted during validation"
         except Exception as e:
             return False, f"Failed to copy file: {e}"
     

@@ -536,18 +536,22 @@ BlastDock Monitoring System
     def _send_email_resolution(self, alert: Alert, channel: NotificationChannel):
         """Send email resolution notification"""
         if not EMAIL_AVAILABLE:
-            return  # Silently skip if email not available
-        
+            # BUG-NEW-007 FIX: Log when email is unavailable instead of silently skipping
+            self.logger.debug("Email notification unavailable - required modules not installed")
+            return
+
         config = channel.config
-        
+
         smtp_server = config.get('smtp_server')
         smtp_port = config.get('smtp_port', 587)
         username = config.get('username')
         password = config.get('password')
         from_email = config.get('from_email')
         to_emails = config.get('to_emails', [])
-        
+
         if not all([smtp_server, username, password, from_email, to_emails]):
+            # BUG-NEW-007 FIX: Log missing configuration instead of silently skipping
+            self.logger.warning(f"Email configuration incomplete for alert {alert.rule_name}. Missing required fields.")
             return
         
         # Create message
