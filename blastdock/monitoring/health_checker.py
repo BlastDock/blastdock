@@ -462,31 +462,32 @@ class HealthChecker:
                 )
             
             # Attempt TCP connection
+            # BUG-NEW-004 FIX: Use try-finally to ensure socket is always closed
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(config.timeout)
-            
-            result = sock.connect_ex((host, port))
-            sock.close()
-            
-            response_time = (time.time() - start_time) * 1000
-            
-            if result == 0:
-                return HealthCheckResult(
-                    status=HealthStatus.HEALTHY,
-                    message=f"TCP port {port} accessible",
-                    response_time_ms=response_time,
-                    timestamp=time.time(),
-                    details={'host': host, 'port': port}
-                )
-            else:
-                return HealthCheckResult(
-                    status=HealthStatus.UNHEALTHY,
-                    message=f"TCP port {port} not accessible",
-                    response_time_ms=response_time,
-                    timestamp=time.time(),
-                    details={'host': host, 'port': port, 'error_code': result},
-                    suggestions=["Check if service is listening on port", "Verify port mapping"]
-                )
+            try:
+                sock.settimeout(config.timeout)
+                result = sock.connect_ex((host, port))
+                response_time = (time.time() - start_time) * 1000
+
+                if result == 0:
+                    return HealthCheckResult(
+                        status=HealthStatus.HEALTHY,
+                        message=f"TCP port {port} accessible",
+                        response_time_ms=response_time,
+                        timestamp=time.time(),
+                        details={'host': host, 'port': port}
+                    )
+                else:
+                    return HealthCheckResult(
+                        status=HealthStatus.UNHEALTHY,
+                        message=f"TCP port {port} not accessible",
+                        response_time_ms=response_time,
+                        timestamp=time.time(),
+                        details={'host': host, 'port': port, 'error_code': result},
+                        suggestions=["Check if service is listening on port", "Verify port mapping"]
+                    )
+            finally:
+                sock.close()
                 
         except socket.timeout:
             return HealthCheckResult(

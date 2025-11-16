@@ -264,20 +264,29 @@ class EnvironmentManager:
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     
     def create_docker_env_file(self, config: Dict[str, Any], output_path: str) -> None:
-        """Create Docker-compatible .env file"""
+        """Create Docker-compatible .env file (BUG-NEW-008 FIX: Added type validation)"""
         docker_vars = {}
-        
+
         # Extract Docker-specific environment variables
         if 'environment_variables' in config:
-            docker_vars.update(config['environment_variables'])
-        
+            env_vars = config['environment_variables']
+            # BUG-NEW-008 FIX: Validate that environment_variables is a dictionary
+            if isinstance(env_vars, dict):
+                docker_vars.update(env_vars)
+            else:
+                self.logger.warning(f"environment_variables is not a dict, got {type(env_vars).__name__}")
+
         # Add database variables if present
         if 'default_ports' in config:
             ports = config['default_ports']
-            if 'mysql' in ports:
-                docker_vars['MYSQL_PORT'] = str(ports['mysql'])
-            if 'postgresql' in ports:
-                docker_vars['POSTGRES_PORT'] = str(ports['postgresql'])
+            # BUG-NEW-008 FIX: Validate that default_ports is a dictionary
+            if isinstance(ports, dict):
+                if 'mysql' in ports:
+                    docker_vars['MYSQL_PORT'] = str(ports['mysql'])
+                if 'postgresql' in ports:
+                    docker_vars['POSTGRES_PORT'] = str(ports['postgresql'])
+            else:
+                self.logger.warning(f"default_ports is not a dict, got {type(ports).__name__}")
         
         # Write Docker .env file
         with open(output_path, 'w') as f:

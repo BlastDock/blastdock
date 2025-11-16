@@ -4,6 +4,7 @@ Handles template installation from marketplace
 """
 
 import os
+import re
 import shutil
 import tempfile
 from typing import Dict, Optional, Any, List
@@ -11,10 +12,39 @@ from pathlib import Path
 
 from ..utils.logging import get_logger
 from ..utils.template_validator import TemplateValidator
+from ..exceptions import TemplateValidationError
 from .repository import TemplateRepository
 from .marketplace import TemplateMarketplace, MarketplaceTemplate
 
 logger = get_logger(__name__)
+
+# BUG-NEW-002 FIX: Pattern for validating template names (alphanumeric, hyphens, underscores only)
+TEMPLATE_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+
+def validate_template_name(template_name: str) -> None:
+    """Validate template name to prevent path traversal attacks (BUG-NEW-002 FIX)
+
+    Args:
+        template_name: The template name to validate
+
+    Raises:
+        TemplateValidationError: If template name contains invalid characters or path traversal sequences
+    """
+    if not template_name:
+        raise TemplateValidationError("Template name cannot be empty")
+
+    # Check for path traversal sequences
+    if '..' in template_name or '/' in template_name or '\\' in template_name:
+        raise TemplateValidationError(
+            f"Template name contains path traversal characters: {template_name}"
+        )
+
+    # Validate against allowed character pattern
+    if not TEMPLATE_NAME_PATTERN.match(template_name):
+        raise TemplateValidationError(
+            f"Template name contains invalid characters. Only alphanumeric, hyphens, and underscores allowed: {template_name}"
+        )
 
 
 def compare_versions(version1: str, version2: str) -> int:
@@ -135,6 +165,8 @@ class TemplateInstaller:
             
             # Install template
             target_name = marketplace_template.name
+            # BUG-NEW-002 FIX: Validate template name to prevent path traversal
+            validate_template_name(target_name)
             target_path = self.templates_dir / f"{target_name}.yml"
             
             # Backup existing template if force installing
@@ -147,12 +179,15 @@ class TemplateInstaller:
             shutil.copy2(template_file, target_path)
             
             # Copy additional files if present
+            # BUG-NEW-003 FIX: Set secure permissions after copying files
             additional_files = []
             for file_pattern in ['README.md', 'blastdock.yml', '.env.example']:
                 source_file = download_path / file_pattern
                 if source_file.exists():
                     target_file = self.templates_dir / f"{target_name}_{file_pattern}"
                     shutil.copy2(source_file, target_file)
+                    # Set secure permissions (readable by owner/group, not writable by others)
+                    os.chmod(target_file, 0o644)
                     additional_files.append(str(target_file))
             
             # Update installation record
