@@ -4,6 +4,7 @@ Deployment management system
 
 import os
 import shutil
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -27,6 +28,7 @@ class DeploymentManager:
         self.template_manager = TemplateManager()
         self.domain_manager = DomainManager()
         self.traefik_integrator = TraefikIntegrator(self.domain_manager)
+        self.logger = logging.getLogger(__name__)  # BUG-CRIT-002 FIX: Add logger
         ensure_dir(self.deploys_dir)
     
     def create_deployment(self, project_name, template_name, config):
@@ -222,8 +224,10 @@ class DeploymentManager:
                 success, output = self.docker_client.compose_down_with_volumes(project_path, project_name)
                 if not success:
                     raise DeploymentFailedError(project_name, f'Failed to stop containers and remove volumes: {output}')
-        except Exception:
-            pass  # Continue even if stop fails
+        except Exception as e:
+            # BUG-CRIT-002 FIX: Log Docker cleanup failures instead of silently swallowing
+            self.logger.warning(f"Failed to stop containers during project removal: {e}")
+            self.logger.info("Continuing with project directory cleanup despite Docker cleanup failure")
         
         # Remove project directory
         shutil.rmtree(project_path)
