@@ -3,19 +3,15 @@ Enhanced error handling and user-friendly error display system
 """
 
 import sys
-import os
 from typing import Dict, Any, Optional, List
 from rich.console import Console
 from rich.panel import Panel
-from rich.text import Text
 from rich.table import Table
-from rich.columns import Columns
 from rich.tree import Tree
 
 from ..exceptions import (
     BlastDockError,
     ErrorSeverity,
-    get_error_severity,
     DockerNotAvailableError,
     TraefikNotInstalledError,
     TraefikNotRunningError,
@@ -162,7 +158,7 @@ class EnhancedErrorHandler:
         error_content.append("")
 
         # Error message
-        error_content.append(f"[dim]Error Message:[/dim]")
+        error_content.append("[dim]Error Message:[/dim]")
         error_content.append(f"  {error_context.error_message}")
 
         # Context information
@@ -313,7 +309,7 @@ class EnhancedErrorHandler:
             self.diagnostics.export_error_report(error_context, report_file)
 
             console.print(f"\n[green]📄 Error report saved: {report_file}[/green]")
-            console.print(f"[dim]Include this file when reporting issues[/dim]")
+            console.print("[dim]Include this file when reporting issues[/dim]")
 
         except Exception as e:
             logger.error(f"Failed to generate error report: {e}")

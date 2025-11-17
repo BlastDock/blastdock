@@ -12,10 +12,8 @@ import subprocess
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, asdict
 from datetime import datetime
-from pathlib import Path
 
-from ..exceptions import BlastDockError, get_error_severity, ErrorSeverity
-from ..constants import ERROR_MESSAGES
+from ..exceptions import get_error_severity, ErrorSeverity
 from .logging import get_logger
 
 
@@ -295,6 +293,7 @@ class ErrorDiagnostics:
                     OSError,
                     ValueError,
                 ) as e:
+                    logger.debug(f"HTTP connectivity check failed for {url}: {e}")  # BUG-QUAL-002 FIX
                     return False
 
             return {

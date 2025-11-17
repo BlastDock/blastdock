@@ -2,15 +2,12 @@
 Enhanced Docker utility functions for BlastDock
 """
 
-import os
-import time
-import logging
-from typing import Dict, List, Optional, Any, Iterator
+from typing import Dict, List, Any
 import docker
-from docker.errors import DockerException, NotFound, APIError
+from docker.errors import DockerException, NotFound
 
 from .logging import get_logger
-from ..docker.errors import DockerError, DockerNotFoundError, DockerNotRunningError
+from ..docker.errors import DockerNotRunningError
 
 logger = get_logger(__name__)
 
@@ -36,11 +33,12 @@ class EnhancedDockerClient:
         return self._client
 
     def is_running(self) -> bool:
-        """Check if Docker daemon is running"""
+        """Check if Docker daemon is running (BUG-QUAL-001 FIX: Specific exceptions)"""
         try:
             self.client.ping()
             return True
-        except Exception:
+        except (DockerException, ConnectionError, OSError) as e:
+            logger.debug(f"Docker daemon check failed: {e}")
             return False
 
     def is_docker_running(self) -> bool:
