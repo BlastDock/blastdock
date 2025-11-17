@@ -7,12 +7,7 @@ import yaml
 from pathlib import Path
 
 # Import cross-platform filesystem utilities
-from .filesystem import (
-    get_deploys_dir,
-    get_project_path,
-    ensure_dir,
-    initialize_directories,
-)
+from .filesystem import ensure_dir
 
 
 def load_yaml(file_path):

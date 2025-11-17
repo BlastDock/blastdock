@@ -2,7 +2,6 @@
 Template validation and enhancement system for BlastDock
 """
 
-import os
 import yaml
 import re
 from typing import Dict, List, Tuple, Optional, Any
@@ -69,7 +68,8 @@ class TemplateAnalysis:
 
         errors = self.error_count
         warnings = self.warning_count
-        total_checks = len(self.results)
+        # BUG-QUAL-002 FIX: Removed unused total_checks variable
+        # Total checks count not needed for current scoring algorithm
 
         # Penalize errors heavily, warnings moderately
         penalty = (errors * 20) + (warnings * 5)

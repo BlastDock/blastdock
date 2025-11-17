@@ -4,7 +4,7 @@ CLI decorators and wrappers for enhanced user experience
 
 import time
 import functools
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, List
 import click
 
 from .ux import get_ux_manager, TaskType, task_progress, status_spinner
@@ -171,7 +171,7 @@ def deployment_command():
                     f"Deployment completed: {project_name}",
                     [
                         f"Duration: {duration:.1f} seconds",
-                        f"Status: Success",
+                        "Status: Success",
                         f"Time: {time.strftime('%H:%M:%S')}",
                     ],
                 )
@@ -226,7 +226,7 @@ def template_command():
                         ]
                     )
 
-                ux.show_error(f"Template operation failed", error_msg, suggestions)
+                ux.show_error("Template operation failed", error_msg, suggestions)
                 raise
 
         return wrapper

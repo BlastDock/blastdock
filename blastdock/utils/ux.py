@@ -5,7 +5,7 @@ Provides progress bars, status indicators, and improved user feedback
 
 import time
 import threading
-from typing import Dict, List, Any, Optional, Callable, Union
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 from enum import Enum
@@ -29,9 +29,7 @@ from rich.text import Text
 from rich.live import Live
 from rich.layout import Layout
 from rich.align import Align
-from rich.rule import Rule
-from rich.prompt import Prompt, Confirm, IntPrompt, FloatPrompt
-from rich.tree import Tree
+from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.columns import Columns
 from rich.status import Status
 
@@ -555,7 +553,7 @@ class UXManager:
     ):
         """Show deployment completion summary"""
         summary_text = Text()
-        summary_text.append(f"🚀 Deployment Complete: ", style="bold green")
+        summary_text.append("🚀 Deployment Complete: ", style="bold green")
         summary_text.append(f"{project_name}\n", style="bold cyan")
         summary_text.append(f"Duration: {duration:.1f} seconds\n\n", style="green")
 
@@ -610,12 +608,11 @@ class DeploymentProgressController:
         if service in self.service_tasks:
             task_id = self.service_tasks[service]
 
+            # BUG-QUAL-002 FIX: Removed unused style variable, description already has emoji
             if success:
                 description = f"✅ {service} deployed"
-                style = "green"
             else:
                 description = f"❌ {service} failed"
-                style = "red"
 
             self.progress.update(task_id, completed=100, description=description)
 
