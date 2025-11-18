@@ -2,25 +2,24 @@
 Enhanced configuration manager with advanced features
 """
 
-import os
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Callable, Union
+from typing import Dict, Any, Optional, List, Callable
 from contextlib import contextmanager
 
 try:
-    from .models import BlastDockConfig, LoggingConfig
+    from .models import BlastDockConfig
 except Exception:
     # Fallback to simple models for compatibility
-    from .simple_models import BlastDockConfig, LoggingConfig
+    from .simple_models import BlastDockConfig
 from .persistence import ConfigPersistence, ConfigBackup
 from .environment import EnvironmentManager
 from .profiles import ProfileManager
 from .schema import ConfigValidator
 from .watchers import ConfigWatcher
 
-from ..utils.helpers import load_yaml, save_yaml
+from ..utils.helpers import load_yaml
 from ..utils.filesystem import paths
 from ..utils.logging import get_logger
 from ..exceptions import ConfigurationError

@@ -3,8 +3,7 @@ Environment variable management for configuration
 """
 
 import os
-from typing import Dict, Any, Optional, Set, List, Union
-from pathlib import Path
+from typing import Dict, Any, Set, List, Union
 
 from ..utils.logging import get_logger
 from ..exceptions import ConfigurationError
@@ -17,7 +16,7 @@ class EnvironmentManager:
 
     PREFIX = "BLASTDOCK_"
     BOOL_TRUE_VALUES = {"true", "1", "yes", "on", "enabled"}
-    BOOL_FALSE_VALUES = {"false", "0", "no", "off", "disabled"}
+    BOOL_FALSE_VALUES = {"false", "0", "no", "of", "disabled"}
 
     def __init__(self, prefix: str = None):
         self.prefix = prefix or self.PREFIX
@@ -57,8 +56,8 @@ class EnvironmentManager:
                 parsed_float = float(value)
                 # Reject infinity and NaN values
                 if parsed_float != parsed_float or parsed_float in (
-                    float("inf"),
-                    float("-inf"),
+                    float("in"),
+                    float("-in"),
                 ):
                     logger.warning(f"Rejecting invalid numeric value: {value}")
                     return value  # Return as string instead
@@ -139,7 +138,7 @@ class EnvironmentManager:
         env_vars = self._flatten_config_to_env(config)
 
         with open(file_path, "w") as f:
-            f.write(f"# BlastDock Configuration Environment Variables\n")
+            f.write("# BlastDock Configuration Environment Variables\n")
             f.write(f"# Generated at: {self._get_timestamp()}\n\n")
 
             for key, value in sorted(env_vars.items()):

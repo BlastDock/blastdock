@@ -6,12 +6,11 @@ import os
 import shutil
 import tempfile
 import hashlib
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, Tuple, Dict, Any
 from pathlib import Path
 import stat
 
 from ..utils.logging import get_logger
-from ..exceptions import SecurityError, FileOperationError
 
 
 logger = get_logger(__name__)
@@ -43,7 +42,7 @@ class SecureFileOperations:
             ".cmd",
             ".com",
             ".scr",
-            ".pif",
+            ".pi",
             ".vbs",
             ".js",
             ".jar",

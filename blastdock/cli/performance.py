@@ -8,7 +8,6 @@ import time
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.tree import Tree
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -32,7 +31,6 @@ console = Console()
 @click.group()
 def performance():
     """Performance monitoring and optimization commands"""
-    pass
 
 
 @performance.command()
@@ -298,7 +296,7 @@ def benchmark(suite, export):
                     templates = template_manager.list_templates()
                     for template in templates[:5]:  # Test first 5 templates
                         template_manager.template_exists(template)
-                except Exception as e:
+                except Exception:
                     ctx.record_error()
 
         console.print("[green]✅ Full benchmarks completed[/green]")
@@ -394,7 +392,7 @@ def monitor(start_monitoring, stop_monitoring, interval):
     memory_optimizer = get_memory_optimizer()
 
     if start_monitoring:
-        console.print(f"\\n[bold blue]📊 Starting Performance Monitoring[/bold blue]")
+        console.print("\\n[bold blue]📊 Starting Performance Monitoring[/bold blue]")
         console.print(f"Monitoring interval: {interval} seconds\\n")
 
         memory_optimizer.start_monitoring(interval)

@@ -8,7 +8,7 @@ import threading
 import json
 import shlex
 import subprocess
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -530,7 +530,7 @@ class AlertManager:
         )
 
         # Create email body
-        body = f"""
+        body = """
 BlastDock Alert Notification
 
 Severity: {alert.severity.value.upper()}
@@ -588,8 +588,8 @@ BlastDock Monitoring System
         msg["Subject"] = f"[RESOLVED] BlastDock Alert: {alert.rule_name}"
 
         # Create email body
-        duration = alert.resolved_at - alert.fired_at if alert.resolved_at else 0
-        body = f"""
+        alert.resolved_at - alert.fired_at if alert.resolved_at else 0
+        body = """
 BlastDock Alert Resolution
 
 Rule: {alert.rule_name}

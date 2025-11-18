@@ -3,11 +3,10 @@ Monitoring dashboard for BlastDock
 """
 
 import time
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.columns import Columns
 from rich.text import Text
 from rich.live import Live
 from rich.layout import Layout
@@ -15,7 +14,7 @@ from rich.layout import Layout
 from ..utils.logging import get_logger
 from .health_checker import get_health_checker, HealthStatus
 from .metrics_collector import get_metrics_collector
-from .alert_manager import get_alert_manager, AlertStatus
+from .alert_manager import get_alert_manager
 
 logger = get_logger(__name__)
 
@@ -362,7 +361,7 @@ class MonitoringDashboard:
         try:
             with Live(
                 console=self.console, refresh_per_second=1 / refresh_interval
-            ) as live:
+            ) as _live:
                 while True:
                     # Create fresh dashboard
                     self.show_project_overview(project_name)

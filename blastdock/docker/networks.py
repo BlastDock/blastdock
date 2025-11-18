@@ -174,7 +174,7 @@ class NetworkManager:
             cmd = ["docker", "network", "rm"]
 
             if force:
-                cmd.append("-f")
+                cmd.append("-")
 
             cmd.append(network_name)
 
@@ -250,7 +250,7 @@ class NetworkManager:
             cmd = ["docker", "network", "disconnect"]
 
             if force:
-                cmd.append("-f")
+                cmd.append("-")
 
             cmd.extend([network_name, container_name])
 
@@ -278,7 +278,7 @@ class NetworkManager:
         }
 
         try:
-            cmd = ["docker", "network", "prune", "-f"]
+            cmd = ["docker", "network", "prune", "-"]
 
             # Add filters
             if filters:
@@ -329,7 +329,7 @@ class NetworkManager:
 
             return containers
 
-        except Exception as e:
+        except Exception:
             raise NetworkError(
                 f"Failed to get containers for network {network_name}",
                 network_name=network_name,

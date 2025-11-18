@@ -5,13 +5,11 @@ Enhanced Docker Compose management with comprehensive error handling
 import os
 import yaml
 import time
-from typing import Dict, List, Optional, Any, Union
-from pathlib import Path
-import subprocess
+from typing import Dict, List, Optional, Any
 
 from ..utils.logging import get_logger
 from .client import get_docker_client
-from .errors import DockerComposeError, create_docker_error
+from .errors import DockerComposeError
 
 logger = get_logger(__name__)
 
@@ -228,7 +226,7 @@ class ComposeManager:
             build_result["errors"].append(str(e))
             build_result["build_time"] = time.time() - start_time
             raise DockerComposeError(
-                f"Failed to build services",
+                "Failed to build services",
                 compose_file=compose_file,
                 service=services[0] if services and len(services) == 1 else None,
             )
@@ -297,7 +295,7 @@ class ComposeManager:
             start_result["errors"].append(str(e))
             start_result["startup_time"] = time.time() - start_time
             raise DockerComposeError(
-                f"Failed to start services",
+                "Failed to start services",
                 compose_file=compose_file,
                 service=services[0] if services and len(services) == 1 else None,
             )
@@ -354,7 +352,7 @@ class ComposeManager:
             stop_result["errors"].append(str(e))
             stop_result["stop_time"] = time.time() - start_time
             raise DockerComposeError(
-                f"Failed to stop services",
+                "Failed to stop services",
                 compose_file=compose_file,
                 service=services[0] if services and len(services) == 1 else None,
             )
@@ -428,7 +426,7 @@ class ComposeManager:
             remove_result["errors"].append(str(e))
             remove_result["remove_time"] = time.time() - start_time
             raise DockerComposeError(
-                f"Failed to remove services", compose_file=compose_file
+                "Failed to remove services", compose_file=compose_file
             )
 
         self.logger.info(f"Services removed: {remove_result}")
@@ -507,7 +505,7 @@ class ComposeManager:
         except Exception as e:
             self.logger.error(f"Failed to get service status: {e}")
             raise DockerComposeError(
-                f"Failed to get service status", compose_file=compose_file
+                "Failed to get service status", compose_file=compose_file
             )
 
     def get_service_logs(
@@ -540,9 +538,9 @@ class ComposeManager:
 
             return result.stdout
 
-        except Exception as e:
+        except Exception:
             raise DockerComposeError(
-                f"Failed to get logs", compose_file=compose_file, service=service
+                "Failed to get logs", compose_file=compose_file, service=service
             )
 
     def scale_service(

@@ -3,19 +3,16 @@ Template Marketplace core functionality
 Manages template discovery, search, and metadata
 """
 
-import os
 import json
 import time
-import hashlib
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from pathlib import Path
-from datetime import datetime
 from enum import Enum
 
 from ..utils.logging import get_logger
 from ..performance.template_registry import get_template_registry
-from ..utils.template_validator import TemplateValidator, TraefikCompatibility
+from ..utils.template_validator import TemplateValidator
 
 logger = get_logger(__name__)
 

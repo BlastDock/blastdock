@@ -5,14 +5,12 @@ Handles template storage, versioning, and distribution
 
 import os
 import json
-import shutil
 import tempfile
 import hashlib
 from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 from dataclasses import dataclass
 import tarfile
-import requests
 
 from ..utils.logging import get_logger
 
@@ -228,7 +226,7 @@ class TemplateRepository:
                             metadata = yaml.safe_load(f) or {}
 
                     # Package the template
-                    package = self.package_template(
+                    _package = self.package_template(
                         template_dir, template_id, version, metadata
                     )
 

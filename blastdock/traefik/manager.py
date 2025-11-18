@@ -2,11 +2,8 @@
 Traefik Manager - Core Traefik integration and management
 """
 
-import os
 import json
-import subprocess
 from typing import Dict, List, Optional, Tuple, Any
-from pathlib import Path
 
 from ..utils.docker_utils import DockerClient
 from ..utils.logging import get_logger
@@ -131,7 +128,7 @@ class TraefikManager:
             if dashboard_domain.endswith(".local") or dashboard_domain.startswith(
                 "localhost"
             ):
-                return f"http://localhost:8080"  # Default dashboard port
+                return "http://localhost:8080"  # Default dashboard port
             else:
                 return f"https://{dashboard_domain}"
 

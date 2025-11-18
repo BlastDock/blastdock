@@ -5,11 +5,10 @@ Template security scanner for BlastDock templates
 import os
 import re
 import yaml
-from typing import Dict, List, Optional, Tuple, Any, Set
+from typing import Dict, List, Any
 from pathlib import Path
 
 from ..utils.logging import get_logger
-from ..exceptions import SecurityError, TemplateError
 from .validator import get_security_validator
 
 

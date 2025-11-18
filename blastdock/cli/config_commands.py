@@ -10,19 +10,13 @@ from typing import Dict, Any, Optional
 import click
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.tree import Tree
 
 from ..config import (
     get_config_manager,
-    ConfigManager,
     BlastDockConfig,
     ProfileManager,
     ConfigBackup,
-    EnvironmentManager,
 )
-from ..exceptions import ConfigurationError
 from ..utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +26,6 @@ console = Console()
 @click.group(name="config")
 def config_group():
     """Configuration management commands"""
-    pass
 
 
 @config_group.command("show")
@@ -156,7 +149,7 @@ def reset_config(profile: str, section: Optional[str], confirm: bool):
             console.print(f"[green]Reset section '{section}' to defaults[/green]")
         else:
             config_manager.reset_to_defaults()
-            console.print(f"[green]Reset configuration to defaults[/green]")
+            console.print("[green]Reset configuration to defaults[/green]")
 
     except Exception as e:
         console.print(f"[red]Error resetting configuration: {e}[/red]")
@@ -180,7 +173,7 @@ def validate_config(profile: str, section: Optional[str], suggestions: bool):
             issues = config_manager.validate_current_config()
 
         if not issues:
-            console.print(f"[green]✓ Configuration is valid[/green]")
+            console.print("[green]✓ Configuration is valid[/green]")
         else:
             console.print(f"[red]Found {len(issues)} validation issues:[/red]")
             for i, issue in enumerate(issues, 1):
@@ -260,7 +253,6 @@ def import_config(import_path: str, profile: str, merge: bool, confirm: bool):
 @config_group.group("profile")
 def profile_group():
     """Configuration profile management"""
-    pass
 
 
 @profile_group.command("list")
@@ -368,7 +360,6 @@ def copy_profile(source_profile: str, target_profile: str, description: Optional
 @config_group.group("backup")
 def backup_group():
     """Configuration backup management"""
-    pass
 
 
 @backup_group.command("create")

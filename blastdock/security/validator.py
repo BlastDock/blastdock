@@ -4,14 +4,12 @@ Comprehensive security validator for BlastDock operations
 
 import re
 import os
-import subprocess
 import ipaddress
 import urllib.parse
 from typing import Dict, List, Optional, Tuple, Any, Union
 from pathlib import Path
 
 from ..utils.logging import get_logger
-from ..exceptions import SecurityError, ValidationError
 
 
 logger = get_logger(__name__)
@@ -415,7 +413,9 @@ class SecurityValidator:
         }
 
         # Extract first word (command name)
-        first_word = command_str.split()[0] if command_str else ""
+        # BUG-CRIT-007 FIX: Check split() result is non-empty to prevent IndexError
+        parts = command_str.split() if command_str else []
+        first_word = parts[0] if parts else ""
         if first_word.lower() in dangerous_commands:
             return False, f"Dangerous command detected: {first_word}"
 

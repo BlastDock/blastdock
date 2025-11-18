@@ -5,8 +5,7 @@ Enhanced Docker client with robust error handling and connection management
 import time
 import subprocess
 import shlex
-from typing import Dict, List, Optional, Any, Union
-from pathlib import Path
+from typing import Dict, List, Optional, Any
 
 from ..utils.logging import get_logger
 from .errors import (
@@ -100,21 +99,21 @@ class DockerClient:
                         "exit_code": e.returncode,
                         "stderr": e.stderr,
                     }
-                    raise create_docker_error(e, f"Docker command", context)
+                    raise create_docker_error(e, "Docker command", context)
                 else:
                     # Some commands might fail transiently
                     if e.returncode in [125, 126, 127]:  # Don't retry these
-                        raise create_docker_error(e, f"Docker command")
+                        raise create_docker_error(e, "Docker command")
                     self.logger.warning(
                         f"Command failed, retrying (attempt {attempt + 1})"
                     )
                     time.sleep(1)
 
-            except FileNotFoundError as e:
+            except FileNotFoundError:
                 self.logger.error("Docker command not found")
                 raise DockerNotFoundError("Docker CLI not found in PATH")
 
-            except PermissionError as e:
+            except PermissionError:
                 self.logger.error("Permission denied for Docker command")
                 raise DockerConnectionError("Permission denied accessing Docker")
 
@@ -139,7 +138,7 @@ class DockerClient:
             if result.returncode == 0:
                 availability["docker_available"] = True
                 version_line = result.stdout.strip()
-                # Extract version (e.g., "Docker version 20.10.21, build baeda1f")
+                # Extract version (e.g., "Docker version 20.10.21, build baeda1")
                 if "version" in version_line:
                     try:
                         # BUG-006 FIX: Check array length before accessing index
@@ -283,7 +282,7 @@ class DockerClient:
 
         # Add compose file
         if compose_file:
-            compose_cmd.extend(["-f", compose_file])
+            compose_cmd.extend(["-", compose_file])
 
         # Add project name
         if project_name:
@@ -360,7 +359,7 @@ class DockerClient:
 
         try:
             # Remove stopped containers
-            result = self.execute_command(["docker", "container", "prune", "-f"])
+            result = self.execute_command(["docker", "container", "prune", "-"])
             if "Total reclaimed space" in result.stdout:
                 # Parse space reclaimed
                 import re
@@ -386,9 +385,9 @@ class DockerClient:
         try:
             # Remove dangling images
             if aggressive:
-                result = self.execute_command(["docker", "image", "prune", "-a", "-f"])
+                result = self.execute_command(["docker", "image", "prune", "-a", "-"])
             else:
-                result = self.execute_command(["docker", "image", "prune", "-f"])
+                result = self.execute_command(["docker", "image", "prune", "-"])
 
             # Count removed images
             image_match = re.search(
@@ -404,7 +403,7 @@ class DockerClient:
 
         try:
             # Remove unused volumes
-            result = self.execute_command(["docker", "volume", "prune", "-f"])
+            result = self.execute_command(["docker", "volume", "prune", "-"])
 
             # Count removed volumes
             volume_match = re.search(
@@ -420,7 +419,7 @@ class DockerClient:
 
         try:
             # Remove unused networks
-            result = self.execute_command(["docker", "network", "prune", "-f"])
+            result = self.execute_command(["docker", "network", "prune", "-"])
 
             # Count removed networks
             network_match = re.search(

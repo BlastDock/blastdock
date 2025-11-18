@@ -5,7 +5,7 @@ Enhanced Docker image management with comprehensive error handling
 import json
 import os
 import time
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 from ..utils.logging import get_logger
@@ -82,8 +82,8 @@ class ImageManager:
 
             return extracted_info
 
-        except Exception as e:
-            raise ImageError(f"Failed to get image information", image_name=image_name)
+        except Exception:
+            raise ImageError("Failed to get image information", image_name=image_name)
 
     def pull_image(
         self, image_name: str, tag: str = "latest", platform: Optional[str] = None
@@ -240,7 +240,7 @@ class ImageManager:
 
             # Add dockerfile path if not default
             if Path(dockerfile_path).name != "Dockerfile":
-                cmd.extend(["-f", dockerfile_path])
+                cmd.extend(["-", dockerfile_path])
 
             # Add build arguments
             if build_args:
@@ -310,7 +310,7 @@ class ImageManager:
             cmd = ["docker", "rmi"]
 
             if force:
-                cmd.append("-f")
+                cmd.append("-")
 
             if no_prune:
                 cmd.append("--no-prune")
@@ -426,8 +426,8 @@ class ImageManager:
 
             return history
 
-        except Exception as e:
-            raise ImageError(f"Failed to get image history", image_name=image_name)
+        except Exception:
+            raise ImageError("Failed to get image history", image_name=image_name)
 
     def prune_images(
         self, all_images: bool = False, filters: Optional[Dict[str, str]] = None
@@ -441,7 +441,7 @@ class ImageManager:
         }
 
         try:
-            cmd = ["docker", "image", "prune", "-f"]
+            cmd = ["docker", "image", "prune", "-"]
 
             if all_images:
                 cmd.append("-a")

@@ -6,7 +6,6 @@ Handles template installation from marketplace
 import os
 import re
 import shutil
-import tempfile
 from typing import Dict, Optional, Any, List
 from pathlib import Path
 
@@ -14,7 +13,7 @@ from ..utils.logging import get_logger
 from ..utils.template_validator import TemplateValidator
 from ..exceptions import TemplateValidationError
 from .repository import TemplateRepository
-from .marketplace import TemplateMarketplace, MarketplaceTemplate
+from .marketplace import TemplateMarketplace
 
 logger = get_logger(__name__)
 
@@ -136,7 +135,7 @@ class TemplateInstaller:
 
         download_path = self.repository.download_template(template_id, version)
         if not download_path:
-            return {"success": False, "error": f"Failed to download template package"}
+            return {"success": False, "error": "Failed to download template package"}
 
         try:
             # Find template files in download
@@ -311,7 +310,7 @@ class TemplateInstaller:
         # Check for newer version
         marketplace_template = self.marketplace.get_template(template_id)
         if not marketplace_template:
-            return {"success": False, "error": f"Template not found in marketplace"}
+            return {"success": False, "error": "Template not found in marketplace"}
 
         current_version = install_info.get("version", "0.0.0")
         latest_version = marketplace_template.version

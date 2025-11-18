@@ -5,13 +5,12 @@ Template management system
 import os
 import re
 import yaml
-import click
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
+from jinja2 import FileSystemLoader, TemplateNotFound, select_autoescape
 from jinja2.sandbox import SandboxedEnvironment
 from rich.console import Console
 from rich.prompt import Prompt, Confirm
 
-from ..utils.helpers import load_yaml, sanitize_name, generate_password
+from ..utils.helpers import load_yaml, generate_password
 from ..utils.validators import (
     validate_project_name,
     validate_domain,

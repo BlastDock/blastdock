@@ -18,8 +18,7 @@ from ..monitoring import (
     get_log_analyzer,
 )
 from ..monitoring.web_dashboard import WebDashboard
-from ..monitoring.health_checker import HealthStatus, ServiceHealthConfig
-from ..monitoring.alert_manager import AlertRule, AlertSeverity, NotificationChannel
+from ..monitoring.health_checker import HealthStatus
 
 console = Console()
 
@@ -27,7 +26,6 @@ console = Console()
 @click.group()
 def monitoring():
     """Advanced monitoring and health check commands"""
-    pass
 
 
 @monitoring.command()
@@ -88,7 +86,7 @@ def health(project_name, output_format, detailed):
         # Service details
         services = health_data.get("services", {})
         if services:
-            console.print(f"\n[bold]Service Health Details:[/bold]")
+            console.print("\n[bold]Service Health Details:[/bold]")
 
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("Service", style="cyan")
@@ -122,7 +120,7 @@ def health(project_name, output_format, detailed):
 
             # Detailed information
             if detailed:
-                console.print(f"\n[bold]Detailed Service Information:[/bold]")
+                console.print("\n[bold]Detailed Service Information:[/bold]")
                 for service_name, service_info in services.items():
                     details = service_info.get("details", {})
                     suggestions = service_info.get("suggestions", [])
@@ -256,7 +254,7 @@ def metrics(project_name, window, output_format):
         # Container-specific metrics
         containers = dashboard_data.get("containers", {})
         if containers:
-            console.print(f"\n[bold]Container Metrics:[/bold]")
+            console.print("\n[bold]Container Metrics:[/bold]")
 
             container_table = Table(show_header=True, header_style="bold magenta")
             container_table.add_column("Container", style="cyan")
@@ -283,7 +281,7 @@ def metrics(project_name, window, output_format):
 
             console.print(container_table)
 
-        console.print(f"\n[green]✅ Metrics retrieved successfully[/green]")
+        console.print("\n[green]✅ Metrics retrieved successfully[/green]")
 
     except Exception as e:
         console.print(f"[red]❌ Metrics retrieval failed: {e}[/red]")
@@ -304,7 +302,7 @@ def alerts(output_format, active_only):
     alert_manager = get_alert_manager()
 
     try:
-        console.print(f"\n[bold blue]🚨 Alert Status[/bold blue]\n")
+        console.print("\n[bold blue]🚨 Alert Status[/bold blue]\n")
 
         # Get alerts
         if active_only:
@@ -456,7 +454,7 @@ def logs(project_name, tail, window, output_format):
 
         # Patterns found
         if analysis_result.patterns_found:
-            console.print(f"\n[bold]Patterns Detected:[/bold]")
+            console.print("\n[bold]Patterns Detected:[/bold]")
 
             patterns_table = Table(show_header=True, header_style="bold magenta")
             patterns_table.add_column("Pattern", style="cyan")
@@ -481,7 +479,7 @@ def logs(project_name, tail, window, output_format):
 
         # Top errors
         if analysis_result.top_errors:
-            console.print(f"\n[bold]Top Errors:[/bold]")
+            console.print("\n[bold]Top Errors:[/bold]")
 
             for i, error in enumerate(analysis_result.top_errors[:5], 1):
                 error_text = Text()
@@ -495,13 +493,13 @@ def logs(project_name, tail, window, output_format):
 
         # Recommendations
         if analysis_result.recommendations:
-            console.print(f"\n[bold yellow]🔧 Recommendations:[/bold yellow]")
+            console.print("\n[bold yellow]🔧 Recommendations:[/bold yellow]")
             for i, rec in enumerate(analysis_result.recommendations, 1):
                 console.print(f"  {i}. {rec}", style="yellow")
 
         # Timeline (if table format)
         if output_format == "table" and analysis_result.timeline:
-            console.print(f"\n[bold]Timeline (Last 24h):[/bold]")
+            console.print("\n[bold]Timeline (Last 24h):[/bold]")
 
             timeline_table = Table(show_header=True, header_style="bold magenta")
             timeline_table.add_column("Hour", style="cyan")
@@ -520,7 +518,7 @@ def logs(project_name, tail, window, output_format):
 
             console.print(timeline_table)
 
-        console.print(f"\n[green]✅ Log analysis completed[/green]")
+        console.print("\n[green]✅ Log analysis completed[/green]")
 
     except Exception as e:
         console.print(f"[red]❌ Log analysis failed: {e}[/red]")
@@ -565,7 +563,7 @@ def background(start, stop, status, interval):
     try:
         if start:
             console.print(
-                f"\n[bold blue]🚀 Starting background monitoring[/bold blue]\n"
+                "\n[bold blue]🚀 Starting background monitoring[/bold blue]\n"
             )
 
             # Start all monitoring services
@@ -582,7 +580,7 @@ def background(start, stop, status, interval):
 
         elif stop:
             console.print(
-                f"\n[bold blue]⏹️ Stopping background monitoring[/bold blue]\n"
+                "\n[bold blue]⏹️ Stopping background monitoring[/bold blue]\n"
             )
 
             # Stop all monitoring services
@@ -590,10 +588,10 @@ def background(start, stop, status, interval):
             metrics_collector.stop_collection()
             alert_manager.stop_evaluation()
 
-            console.print(f"[green]✅ Background monitoring stopped[/green]")
+            console.print("[green]✅ Background monitoring stopped[/green]")
 
         elif status:
-            console.print(f"\n[bold blue]📊 Background Monitoring Status[/bold blue]\n")
+            console.print("\n[bold blue]📊 Background Monitoring Status[/bold blue]\n")
 
             # Get status from each service
             health_stats = health_checker.get_health_statistics()
@@ -673,7 +671,7 @@ def export(project_name, output):
 @click.pass_context
 def web(ctx, host, port, browser):
     """Launch web-based monitoring dashboard"""
-    console.print(f"\n[bold blue]🌐 Starting BlastDock Web Dashboard...[/bold blue]\n")
+    console.print("\n[bold blue]🌐 Starting BlastDock Web Dashboard...[/bold blue]\n")
     console.print(f"   Host: {host}")
     console.print(f"   Port: {port}")
 

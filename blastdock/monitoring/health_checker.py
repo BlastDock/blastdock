@@ -6,7 +6,7 @@ import time
 import threading
 import requests
 import socket
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 import subprocess
@@ -413,7 +413,7 @@ class HealthChecker:
                         "expected_status": config.expected_status,
                     },
                     suggestions=[
-                        f"Check service logs",
+                        "Check service logs",
                         f"Verify service is responding at {url}",
                     ],
                 )

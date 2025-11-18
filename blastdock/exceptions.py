@@ -15,13 +15,9 @@ class BlastDockError(Exception):
 class ConfigurationError(BlastDockError):
     """Raised when there's a configuration-related error"""
 
-    pass
-
 
 class TemplateError(BlastDockError):
     """Base class for template-related errors"""
-
-    pass
 
 
 class TemplateNotFoundError(TemplateError):
@@ -54,8 +50,6 @@ class TemplateRenderError(TemplateError):
 class ProjectError(BlastDockError):
     """Base class for project-related errors"""
 
-    pass
-
 
 class ProjectNotFoundError(ProjectError):
     """Raised when a requested project cannot be found"""
@@ -87,8 +81,6 @@ class ProjectConfigurationError(ProjectError):
 class DeploymentError(BlastDockError):
     """Base class for deployment-related errors"""
 
-    pass
-
 
 class DeploymentFailedError(DeploymentError):
     """Raised when deployment fails"""
@@ -109,8 +101,6 @@ class DeploymentNotFoundError(DeploymentError):
 
 class DockerError(BlastDockError):
     """Base class for Docker-related errors"""
-
-    pass
 
 
 class DockerNotAvailableError(DockerError):
@@ -138,8 +128,6 @@ class DockerComposeError(DockerError):
 
 class ValidationError(BlastDockError):
     """Base class for validation errors"""
-
-    pass
 
 
 class PortValidationError(ValidationError):
@@ -192,8 +180,6 @@ class PasswordValidationError(ValidationError):
 class FileSystemError(BlastDockError):
     """Base class for filesystem-related errors"""
 
-    pass
-
 
 class DirectoryNotWritableError(FileSystemError):
     """Raised when a required directory is not writable"""
@@ -217,8 +203,6 @@ class InsufficientSpaceError(FileSystemError):
 class NetworkError(BlastDockError):
     """Base class for network-related errors"""
 
-    pass
-
 
 class ServiceUnavailableError(NetworkError):
     """Raised when a required service is unavailable"""
@@ -231,8 +215,6 @@ class ServiceUnavailableError(NetworkError):
 
 class TraefikError(BlastDockError):
     """Base class for Traefik-related errors"""
-
-    pass
 
 
 class TraefikNotInstalledError(TraefikError):
@@ -272,8 +254,6 @@ class TraefikConfigurationError(TraefikError):
 class DomainError(BlastDockError):
     """Base class for domain-related errors"""
 
-    pass
-
 
 class DomainNotAvailableError(DomainError):
     """Raised when a domain is not available for use"""
@@ -301,8 +281,6 @@ class DomainConflictError(DomainError):
 class SSLError(BlastDockError):
     """Base class for SSL certificate errors"""
 
-    pass
-
 
 class SSLCertificateError(SSLError):
     """Raised when SSL certificate operations fail"""
@@ -328,8 +306,6 @@ class SSLValidationError(SSLError):
 class PortError(BlastDockError):
     """Base class for port-related errors"""
 
-    pass
-
 
 class PortAllocationError(PortError):
     """Raised when port allocation fails"""
@@ -350,8 +326,6 @@ class PortReleaseError(PortError):
 
 class MigrationError(BlastDockError):
     """Base class for migration-related errors"""
-
-    pass
 
 
 class MigrationFailedError(MigrationError):
@@ -381,8 +355,6 @@ class MigrationIncompatibleError(MigrationError):
 class BackupError(BlastDockError):
     """Base class for backup-related errors"""
 
-    pass
-
 
 class BackupFailedError(BackupError):
     """Raised when backup creation fails"""
@@ -406,8 +378,6 @@ class RestoreFailedError(BackupError):
 class SecurityError(BlastDockError):
     """Base class for security-related errors"""
 
-    pass
-
 
 class SecurityValidationError(SecurityError):
     """Raised when security validation fails"""
@@ -429,8 +399,6 @@ class EncryptionError(SecurityError):
 
 class FileOperationError(BlastDockError):
     """Base class for file operation errors"""
-
-    pass
 
 
 class FileSecurityError(FileOperationError):

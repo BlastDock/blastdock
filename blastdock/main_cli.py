@@ -5,26 +5,20 @@ Main CLI interface for managing Docker application deployments
 """
 
 import sys
-import os
 import signal
 import click
 from rich.console import Console
 
 # Import version and system info
-from ._version import __version__, get_system_info, check_python_version
+from ._version import __version__, check_python_version
 
 # Import core modules
-from .core.template_manager import TemplateManager
-from .core.deployment_manager import DeploymentManager
-from .core.monitor import Monitor
-from .core.config import get_config_manager, get_config
-from .core.traefik import TraefikIntegrator
+from .core.config import get_config_manager
 from .core.domain import DomainManager
 
 # Import utilities
 from .utils.logging import get_logger, initialize_logging
-from .utils.filesystem import paths, initialize_directories
-from .utils.error_handler import handle_cli_error
+from .utils.filesystem import initialize_directories
 
 # Import CLI command groups
 from .cli.deploy import deploy_group
@@ -93,7 +87,7 @@ def setup_cli_environment(
     # Load configuration
     try:
         config_manager = get_config_manager(profile)
-        config = config_manager.config
+        config_manager.config
         logger.debug(f"Loaded configuration for profile '{profile}'")
     except Exception as e:
         logger.error(f"Failed to load configuration: {e}")
@@ -191,7 +185,6 @@ def templates(ctx):
 @cli.group()
 def traefik():
     """Traefik reverse proxy management"""
-    pass
 
 
 @traefik.command()
@@ -215,7 +208,7 @@ def traefik_status():
 
 
 @traefik.command()
-@click.option("--follow", "-f", is_flag=True, help="Follow log output")
+@click.option("--follow", "-", is_flag=True, help="Follow log output")
 @click.option("--tail", type=int, default=100, help="Number of recent lines to show")
 def logs(follow, tail):
     """View Traefik logs"""
@@ -231,7 +224,7 @@ def dashboard():
 
 
 @traefik.command()
-@click.option("--force", "-f", is_flag=True, help="Force restart without confirmation")
+@click.option("--force", "-", is_flag=True, help="Force restart without confirmation")
 def restart(force):
     """Restart Traefik"""
     # Implementation will be added
@@ -242,7 +235,7 @@ def restart(force):
 @click.option(
     "--remove-data", is_flag=True, help="Also remove SSL certificates and data"
 )
-@click.option("--force", "-f", is_flag=True, help="Force removal without confirmation")
+@click.option("--force", "-", is_flag=True, help="Force removal without confirmation")
 def remove(remove_data, force):
     """Remove Traefik installation"""
     # Implementation will be added
@@ -253,14 +246,13 @@ def remove(remove_data, force):
 @cli.group()
 def domain():
     """Domain and subdomain management"""
-    pass
 
 
 @domain.command("set-default")
 @click.argument("domain_name")
 def set_default(domain_name):
     """Set the default domain for new deployments"""
-    domain_manager = DomainManager()
+    DomainManager()
     config_manager = get_config_manager()
     config_manager.set_value("default_domain", domain_name)
     console.print(f"[green]✓ Set default domain to: {domain_name}[/green]")
@@ -298,7 +290,6 @@ def check(domain_name):
 @cli.group()
 def ports():
     """Port allocation and conflict management"""
-    pass
 
 
 @ports.command("list")
@@ -326,7 +317,6 @@ def conflicts():
 @cli.group()
 def ssl():
     """SSL certificate management"""
-    pass
 
 
 @ssl.command("status")
@@ -363,7 +353,6 @@ def test_ssl(domain):
 @cli.group()
 def migrate():
     """Migration tools for Traefik integration"""
-    pass
 
 
 @migrate.command("to-traefik")

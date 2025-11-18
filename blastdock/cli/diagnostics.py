@@ -13,7 +13,6 @@ from rich.tree import Tree
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..utils.error_diagnostics import get_diagnostics
-from ..utils.error_handler import EnhancedErrorHandler
 
 
 console = Console()
@@ -22,7 +21,6 @@ console = Console()
 @click.group()
 def diagnostics():
     """System diagnostics and error reporting commands"""
-    pass
 
 
 @diagnostics.command()
@@ -365,7 +363,7 @@ def _display_detailed_error(error):
         f"[bold]Time:[/bold] {error.timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
     )
     error_content.append("")
-    error_content.append(f"[bold]Message:[/bold]")
+    error_content.append("[bold]Message:[/bold]")
     error_content.append(f"  {error.error_message}")
 
     if error.project_name:

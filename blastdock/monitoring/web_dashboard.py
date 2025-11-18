@@ -1,7 +1,7 @@
 """Web dashboard module (Flask optional)"""
 
 try:
-    from flask import Flask, render_template_string, jsonify, request
+    from flask import Flask, jsonify
     from flask_cors import CORS
 
     FLASK_AVAILABLE = True

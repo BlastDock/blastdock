@@ -5,7 +5,6 @@ Log analysis system for BlastDock deployments
 import re
 import time
 import json
-import os
 from typing import Dict, List, Any, Optional, Tuple, Pattern
 from dataclasses import dataclass, field
 from collections import defaultdict, Counter

@@ -4,7 +4,7 @@ Browse, search, and install templates from the marketplace
 """
 
 import sys
-from typing import Optional, List
+from typing import Optional
 
 import click
 from rich.console import Console
@@ -13,7 +13,7 @@ from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
 
-from ..marketplace import TemplateMarketplace, TemplateRepository, TemplateInstaller
+from ..marketplace import TemplateMarketplace, TemplateInstaller
 from ..marketplace.marketplace import TemplateCategory
 from ..utils.logging import get_logger
 
@@ -24,7 +24,6 @@ console = Console()
 @click.group(name="marketplace")
 def marketplace():
     """Template marketplace commands"""
-    pass
 
 
 @marketplace.command("search")
@@ -127,7 +126,7 @@ def template_info(template_id: str):
             return
 
         # Create info panel
-        info_content = f"""[bold]{template.display_name}[/bold]
+        info_content = """[bold]{template.display_name}[/bold]
 {template.description}
 
 [bold]Details:[/bold]
@@ -187,7 +186,7 @@ def show_featured(limit: int):
         columns = []
         for i, template in enumerate(featured, 1):
             # Create template card
-            card_content = f"""[bold green]{template.display_name}[/bold green]
+            card_content = """[bold green]{template.display_name}[/bold green]
 {template.description[:80]}...
 
 Rating: {"⭐" * int(template.rating)} {template.rating:.1f}
@@ -272,7 +271,7 @@ def show_categories():
 @click.argument("template_id")
 @click.option("--version", "-v", default="latest", help="Template version to install")
 @click.option(
-    "--force", "-f", is_flag=True, help="Force reinstall if already installed"
+    "--force", "-", is_flag=True, help="Force reinstall if already installed"
 )
 def install_template(template_id: str, version: str, force: bool):
     """Install a template from the marketplace"""
@@ -295,7 +294,7 @@ def install_template(template_id: str, version: str, force: bool):
                 console.print("[green]✅ Traefik compatible[/green]")
 
             if result.get("additional_files"):
-                console.print(f"\nAdditional files installed:")
+                console.print("\nAdditional files installed:")
                 for file_path in result["additional_files"]:
                     console.print(f"  • {file_path}")
 
@@ -304,7 +303,7 @@ def install_template(template_id: str, version: str, force: bool):
                 f"--template {result['template_name']}[/dim]"
             )
         else:
-            console.print(f"\n[bold red]❌ Installation failed[/bold red]")
+            console.print("\n[bold red]❌ Installation failed[/bold red]")
             console.print(f"Error: {result['error']}")
 
             if "validation_errors" in result:
@@ -386,7 +385,7 @@ def list_templates(installed: bool):
                     )
 
             console.print(
-                f"\n[dim]Use 'blastdock marketplace search' for detailed search[/dim]"
+                "\n[dim]Use 'blastdock marketplace search' for detailed search[/dim]"
             )
 
     except Exception as e:
