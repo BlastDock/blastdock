@@ -457,7 +457,8 @@ def report(check_thresholds, export_report):
                 console.print("[bold red]🚨 Threshold Violations:[/bold red]")
                 for violation in threshold_results["violations"]:
                     console.print(
-                        f"  • {violation['operation']}: {violation['type']} = {violation['value']:.1f} (threshold: {violation['threshold']})"
+                        f"  • {violation['operation']}: {violation['type']} = "
+                        f"{violation['value']:.1f} (threshold: {violation['threshold']})"
                     )
 
             # Show warnings
@@ -465,7 +466,8 @@ def report(check_thresholds, export_report):
                 console.print("\\n[bold yellow]⚠️ Performance Warnings:[/bold yellow]")
                 for warning in threshold_results["warnings"]:
                     console.print(
-                        f"  • {warning['operation']}: {warning['type']} = {warning['value']:.1f} (threshold: {warning['threshold']})"
+                        f"  • {warning['operation']}: {warning['type']} = "
+                        f"{warning['value']:.1f} (threshold: {warning['threshold']})"
                     )
 
     # Generate summary report

@@ -155,7 +155,8 @@ class ConfigManager:
                     migrated_config = self._migrate_legacy_config(legacy_config)
 
                     # Create backup of legacy config
-                    backup_name = (
+                    # Backup name generated for documentation purposes
+                    _backup_name = (  # noqa: F841
                         f"legacy_migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                     )
                     self.backup_manager.create_backup(

@@ -882,8 +882,8 @@ class TemplateValidator:
         for analysis in analyses.values():
             traefik_counts[analysis.traefik_compatibility] += 1
 
-        # Calculate average score
-        _avg_score = (
+        # Calculate average score (reserved for future use in report)
+        _avg_score = (  # noqa: F841
             sum(a.score for a in analyses.values()) / total_templates
             if total_templates > 0
             else 0

@@ -79,7 +79,8 @@ class TemplateManager:
         # Validate against allowed character pattern
         if not self.TEMPLATE_NAME_PATTERN.match(template_name):
             raise TemplateValidationError(
-                f"Template name contains invalid characters. Only alphanumeric, hyphens, and underscores allowed: {template_name}"
+                f"Template name contains invalid characters. "
+                f"Only alphanumeric, hyphens, and underscores allowed: {template_name}"
             )
 
     def list_templates(self):
