@@ -3,10 +3,9 @@ Configuration schema validation and management
 """
 
 import json
-from typing import Dict, Any, List, Optional, Union, Type
+from typing import Dict, Any, List, Optional
 from pathlib import Path
 from jsonschema import validate, ValidationError, Draft7Validator
-from pydantic import BaseModel
 
 from .simple_models import BlastDockConfig
 

@@ -6,8 +6,7 @@ import json
 import socket
 import subprocess
 import threading
-from typing import Dict, List, Optional, Set, Tuple, Any
-from pathlib import Path
+from typing import Dict, List, Optional, Any
 
 from ..utils.logging import get_logger
 from ..utils.filesystem import paths
@@ -528,7 +527,7 @@ class PortManager:
             )
         except FileNotFoundError:
             # BUG-006 FIX: netstat command not found (expected on some systems)
-            logger.debug(f"netstat command not found")
+            logger.debug("netstat command not found")
         except Exception as e:
             # BUG-006 FIX: Log unexpected errors
             logger.debug(
@@ -538,7 +537,7 @@ class PortManager:
         # Fallback to lsof
         try:
             result = subprocess.run(
-                ["lsof", "-i", f":{port}"], capture_output=True, text=True, timeout=5
+                ["lso", "-i", f":{port}"], capture_output=True, text=True, timeout=5
             )
 
             if result.returncode == 0:
@@ -556,7 +555,7 @@ class PortManager:
             )
         except FileNotFoundError:
             # BUG-006 FIX: lsof command not found (expected on some systems)
-            logger.debug(f"lsof command not found")
+            logger.debug("lsof command not found")
         except Exception as e:
             # BUG-006 FIX: Log unexpected errors
             logger.debug(

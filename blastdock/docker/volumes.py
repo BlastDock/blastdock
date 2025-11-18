@@ -86,9 +86,9 @@ class VolumeManager:
 
         except VolumeError:
             raise
-        except Exception as e:
+        except Exception:
             raise VolumeError(
-                f"Failed to get volume information", volume_name=volume_name
+                "Failed to get volume information", volume_name=volume_name
             )
 
     def create_volume(
@@ -155,7 +155,7 @@ class VolumeManager:
             cmd = ["docker", "volume", "rm"]
 
             if force:
-                cmd.append("-f")
+                cmd.append("-")
 
             cmd.append(volume_name)
 
@@ -181,7 +181,7 @@ class VolumeManager:
         }
 
         try:
-            cmd = ["docker", "volume", "prune", "-f"]
+            cmd = ["docker", "volume", "prune", "-"]
 
             # Add filters
             if filters:
@@ -276,7 +276,7 @@ class VolumeManager:
                                     }
                                 )
 
-                    except Exception as e:
+                    except Exception:
                         # Skip containers we can't inspect
                         continue
 
@@ -347,20 +347,20 @@ class VolumeManager:
             )
 
             if not create_result["success"]:
-                raise VolumeError(f"Failed to create backup container")
+                raise VolumeError("Failed to create backup container")
 
             try:
                 # Start the container
                 container_manager.start_container(temp_container_name)
 
                 # Create backup inside container
-                tar_cmd = ["tar", "-czf", "/backup.tar.gz", "-C", "/backup_source", "."]
+                tar_cmd = ["tar", "-cz", "/backup.tar.gz", "-C", "/backup_source", "."]
                 if compression == "none":
-                    tar_cmd = ["tar", "-cf", "/backup.tar", "-C", "/backup_source", "."]
+                    tar_cmd = ["tar", "-c", "/backup.tar", "-C", "/backup_source", "."]
                 elif compression == "bzip2":
                     tar_cmd = [
                         "tar",
-                        "-cjf",
+                        "-cj",
                         "/backup.tar.bz2",
                         "-C",
                         "/backup_source",
@@ -388,7 +388,7 @@ class VolumeManager:
                 )
 
                 if not copy_result["success"]:
-                    raise VolumeError(f"Failed to copy backup file")
+                    raise VolumeError("Failed to copy backup file")
 
                 backup_result["success"] = True
 
@@ -439,7 +439,7 @@ class VolumeManager:
                 # Volume doesn't exist, create it
                 create_result = self.create_volume(volume_name)
                 if not create_result["success"]:
-                    raise VolumeError(f"Failed to create volume for restore")
+                    raise VolumeError("Failed to create volume for restore")
 
             # Create temporary container to restore into the volume
             temp_container_name = f"blastdock_restore_{volume_name}_{int(time.time())}"
@@ -457,7 +457,7 @@ class VolumeManager:
             )
 
             if not create_result["success"]:
-                raise VolumeError(f"Failed to create restore container")
+                raise VolumeError("Failed to create restore container")
 
             try:
                 # Start the container
@@ -469,13 +469,13 @@ class VolumeManager:
                 )
 
                 if not copy_result["success"]:
-                    raise VolumeError(f"Failed to copy backup file to container")
+                    raise VolumeError("Failed to copy backup file to container")
 
                 # Extract backup into volume
                 if backup_path.endswith(".tar.gz") or backup_path.endswith(".tgz"):
                     extract_cmd = [
                         "tar",
-                        "-xzf",
+                        "-xz",
                         "/backup_file",
                         "-C",
                         "/restore_target",
@@ -483,7 +483,7 @@ class VolumeManager:
                 elif backup_path.endswith(".tar.bz2") or backup_path.endswith(".tbz2"):
                     extract_cmd = [
                         "tar",
-                        "-xjf",
+                        "-xj",
                         "/backup_file",
                         "-C",
                         "/restore_target",
@@ -491,7 +491,7 @@ class VolumeManager:
                 elif backup_path.endswith(".tar"):
                     extract_cmd = [
                         "tar",
-                        "-xf",
+                        "-x",
                         "/backup_file",
                         "-C",
                         "/restore_target",
@@ -500,7 +500,7 @@ class VolumeManager:
                     # Assume gzip
                     extract_cmd = [
                         "tar",
-                        "-xzf",
+                        "-xz",
                         "/backup_file",
                         "-C",
                         "/restore_target",

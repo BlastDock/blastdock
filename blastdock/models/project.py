@@ -1,7 +1,7 @@
 """Project model definitions"""
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 
 @dataclass

@@ -2,7 +2,7 @@
 Simple configuration models without Pydantic validators for compatibility
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Any
 from pydantic import BaseModel, Field
 
 

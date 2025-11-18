@@ -6,7 +6,7 @@ for services that require web access.
 """
 
 import copy
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 from ..utils.logging import get_logger
 from .config import get_config
 
@@ -284,7 +284,7 @@ class TraefikIntegrator:
             # Apply middlewares to secure router
             if domain_config.get("tls", True) and middleware_names:
                 existing_mw = f"{router_name}-redirect"
-                all_middlewares = f"{existing_mw}," + ",".join(middleware_names)
+                f"{existing_mw}," + ",".join(middleware_names)
                 labels.append(
                     f"traefik.http.routers.{router_name}-secure.middlewares={','.join(middleware_names)}"
                 )

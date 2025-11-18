@@ -2,8 +2,6 @@
 BlastDock Constants - Application-wide constants and configuration
 """
 
-import os
-from pathlib import Path
 
 # Version Information
 APP_NAME = "blastdock"

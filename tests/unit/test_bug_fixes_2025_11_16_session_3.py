@@ -185,7 +185,7 @@ class TestSocketResourceLeak:
 
             try:
                 result = checker._check_tcp(config, '127.0.0.1', 80)
-            except:
+            except (OSError, ConnectionError):
                 pass  # We expect an error
 
             # Verify socket.close() was called despite exception

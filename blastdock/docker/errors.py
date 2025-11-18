@@ -83,7 +83,7 @@ class DockerComposeError(DockerError):
         service: Optional[str] = None,
         exit_code: Optional[int] = None,
     ):
-        details = f"Docker Compose operation failed"
+        details = "Docker Compose operation failed"
         if compose_file:
             details += f" for file: {compose_file}"
         if service:

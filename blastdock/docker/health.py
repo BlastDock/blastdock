@@ -4,12 +4,11 @@ Docker health checking and monitoring utilities
 
 import time
 import json
-from typing import Dict, List, Optional, Any, Tuple
-from datetime import datetime, timedelta
+from typing import Dict, Optional, Any
+from datetime import datetime
 
 from ..utils.logging import get_logger
 from .client import get_docker_client
-from .errors import DockerError, ContainerError
 
 logger = get_logger(__name__)
 
@@ -86,7 +85,7 @@ class DockerHealthChecker:
 
             # Check disk space (Docker root directory)
             try:
-                result = self.docker_client.execute_command(["docker", "system", "df"])
+                result = self.docker_client.execute_command(["docker", "system", "d"])
                 health_report["performance_metrics"]["disk_usage"] = result.stdout
 
                 # Parse disk usage for warnings
@@ -102,8 +101,8 @@ class DockerHealthChecker:
                                         # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                                         size_gb = float(size_str.replace("GB", ""))
                                         if size_gb != size_gb or size_gb in (
-                                            float("inf"),
-                                            float("-inf"),
+                                            float("in"),
+                                            float("-in"),
                                         ):
                                             # NaN or Infinity detected, skip
                                             pass
@@ -227,8 +226,8 @@ class DockerHealthChecker:
                     # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                     cpu_percent = float(cpu_str)
                     if cpu_percent != cpu_percent or cpu_percent in (
-                        float("inf"),
-                        float("-inf"),
+                        float("in"),
+                        float("-in"),
                     ):
                         pass  # Skip invalid values
                     elif cpu_percent > 80:
@@ -241,8 +240,8 @@ class DockerHealthChecker:
                     # BUG-HIGH-002 FIX: Validate float for NaN/Infinity
                     mem_percent = float(mem_str)
                     if mem_percent != mem_percent or mem_percent in (
-                        float("inf"),
-                        float("-inf"),
+                        float("in"),
+                        float("-in"),
                     ):
                         pass  # Skip invalid values
                     elif mem_percent > 90:
@@ -252,7 +251,7 @@ class DockerHealthChecker:
                 except ValueError:
                     pass
 
-            except Exception as e:
+            except Exception:
                 health_info["recommendations"].append(
                     "Could not get resource statistics"
                 )
@@ -589,7 +588,7 @@ class DockerHealthChecker:
         try:
             value = float(percent_str.replace("%", ""))
             # Check for NaN or Infinity
-            if value != value or value in (float("inf"), float("-inf")):
+            if value != value or value in (float("in"), float("-inf")):
                 return 0.0
             return value
         except ValueError:

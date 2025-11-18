@@ -3,7 +3,6 @@ CLI commands for template management and validation
 """
 
 import click
-import os
 from pathlib import Path
 from rich.console import Console
 from rich.table import Table
@@ -29,7 +28,6 @@ console = Console()
 @click.group()
 def templates():
     """Template management and validation commands"""
-    pass
 
 
 @templates.command()
@@ -43,7 +41,7 @@ def templates():
 )
 @click.option(
     "--filter",
-    "-f",
+    "-",
     type=click.Choice(["all", "errors", "warnings", "no-traefik"]),
     default="all",
     help="Filter results",
@@ -146,7 +144,7 @@ def analyze(template_name, templates_dir):
 @click.option("--templates-dir", "-d", help="Templates directory path")
 @click.option(
     "--filter",
-    "-f",
+    "-",
     type=click.Choice(["none", "basic", "partial"]),
     default="none",
     help="Filter by Traefik compatibility",
@@ -512,11 +510,11 @@ def _display_summary(analyses):
 
     console.print(
         Panel(
-            f"[bold green]📊 Validation Summary[/bold green]\n\n"
+            "[bold green]📊 Validation Summary[/bold green]\n\n"
             f"Templates: {total}\n"
             f"Valid: {valid} ({valid/total*100:.1f}%)\n"
             f"Average Score: {avg_score:.1f}/100\n\n"
-            f"[bold blue]Traefik Support:[/bold blue]\n"
+            "[bold blue]Traefik Support:[/bold blue]\n"
             f"🟢 Full: {traefik_counts[TraefikCompatibility.FULL]}\n"
             f"🟡 Partial: {traefik_counts[TraefikCompatibility.PARTIAL]}\n"
             f"🟠 Basic: {traefik_counts[TraefikCompatibility.BASIC]}\n"

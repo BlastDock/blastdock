@@ -2,12 +2,11 @@
 Configuration file watching and change detection
 """
 
-import os
 import time
 import threading
 from pathlib import Path
 from typing import List, Callable, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from ..utils.logging import get_logger
 
@@ -20,6 +19,9 @@ class ConfigWatcher:
     def __init__(self, config_file: Path, check_interval: float = 1.0):
         self.config_file = config_file
         self.check_interval = check_interval
+
+        # BUG-CRIT-014 FIX: Add lock for thread-safe access to shared state
+        self._lock = threading.Lock()
 
         # State tracking
         self._running = False
@@ -46,47 +48,57 @@ class ConfigWatcher:
 
     def add_callback(self, callback: Callable[[Path], None]) -> None:
         """Add callback for file changes"""
-        self._callbacks.append(callback)
+        # BUG-CRIT-014 FIX: Use lock when modifying callbacks list
+        with self._lock:
+            self._callbacks.append(callback)
         logger.debug(f"Added file watcher callback: {callback.__name__}")
 
     def remove_callback(self, callback: Callable[[Path], None]) -> None:
         """Remove file change callback"""
-        if callback in self._callbacks:
-            self._callbacks.remove(callback)
-            logger.debug(f"Removed file watcher callback: {callback.__name__}")
+        # BUG-CRIT-014 FIX: Use lock when modifying callbacks list
+        with self._lock:
+            if callback in self._callbacks:
+                self._callbacks.remove(callback)
+                logger.debug(f"Removed file watcher callback: {callback.__name__}")
 
     def start(self) -> None:
         """Start watching for file changes"""
-        if self._running:
-            logger.warning("Config watcher is already running")
-            return
+        # BUG-CRIT-014 FIX: Use lock to prevent race condition in thread start
+        with self._lock:
+            if self._running:
+                logger.warning("Config watcher is already running")
+                return
 
-        self._running = True
+            self._running = True
 
-        if self._use_polling:
-            self._thread = threading.Thread(target=self._polling_watch, daemon=True)
-        else:
-            # Try to use native file system events if available
-            try:
-                self._thread = threading.Thread(target=self._native_watch, daemon=True)
-            except ImportError:
-                logger.warning(
-                    "Native file watching not available, falling back to polling"
-                )
+            if self._use_polling:
                 self._thread = threading.Thread(target=self._polling_watch, daemon=True)
+            else:
+                # Try to use native file system events if available
+                try:
+                    self._thread = threading.Thread(target=self._native_watch, daemon=True)
+                except ImportError:
+                    logger.warning(
+                        "Native file watching not available, falling back to polling"
+                    )
+                    self._thread = threading.Thread(target=self._polling_watch, daemon=True)
 
-        self._thread.start()
+            self._thread.start()
         logger.info(f"Started configuration file watcher for {self.config_file}")
 
     def stop(self) -> None:
         """Stop watching for file changes"""
-        if not self._running:
-            return
+        # BUG-CRIT-014 FIX: Use lock to safely stop the watcher
+        with self._lock:
+            if not self._running:
+                return
 
-        self._running = False
+            self._running = False
+            thread_to_join = self._thread
 
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=2.0)
+        # Join outside of lock to avoid deadlock
+        if thread_to_join and thread_to_join.is_alive():
+            thread_to_join.join(timeout=2.0)
 
         logger.info("Stopped configuration file watcher")
 
@@ -248,8 +260,12 @@ class ConfigWatcher:
 
         logger.info(f"Configuration file changed: {self.config_file}")
 
-        # Trigger all callbacks
-        for callback in self._callbacks:
+        # BUG-CRIT-014 FIX: Copy callbacks list under lock to avoid race condition
+        with self._lock:
+            callbacks_to_call = self._callbacks.copy()
+
+        # Trigger all callbacks outside of lock
+        for callback in callbacks_to_call:
             try:
                 callback(self.config_file)
             except Exception as e:

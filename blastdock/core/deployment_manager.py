@@ -7,7 +7,6 @@ import shutil
 import logging
 import json
 from datetime import datetime
-from pathlib import Path
 
 from ..utils.helpers import (
     get_deploys_dir,

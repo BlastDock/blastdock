@@ -5,9 +5,9 @@ Metrics collection system for BlastDock deployments
 import time
 import threading
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from dataclasses import dataclass, field
-from collections import defaultdict, deque
+from collections import deque
 import statistics
 
 from ..utils.logging import get_logger

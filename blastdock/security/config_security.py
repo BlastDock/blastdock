@@ -5,12 +5,10 @@ Configuration security for BlastDock - encryption and secure storage
 import os
 import json
 import base64
-import hashlib
-from typing import Dict, Any, Optional, Tuple, Union, List
-from pathlib import Path
+from typing import Dict, Any, Optional, Tuple, List
 
 from ..utils.logging import get_logger
-from ..exceptions import SecurityError, ConfigurationError
+from ..exceptions import SecurityError
 
 # Try to import cryptography, fallback to basic encryption if not available
 try:
@@ -438,11 +436,11 @@ class ConfigurationSecurity:
                     iterations=self.key_derivation_iterations,
                 )
                 old_key = base64.urlsafe_b64encode(kdf.derive(old_password.encode()))
-                old_fernet = Fernet(old_key)
+                Fernet(old_key)
             else:
                 if not self._load_key():
                     raise SecurityError("Cannot load old key")
-                old_fernet = self.encryption_key
+                self.encryption_key
 
             # Initialize new key
             if not self.initialize_encryption(new_password):

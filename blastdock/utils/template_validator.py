@@ -867,9 +867,9 @@ class TemplateValidator:
     def generate_validation_report(self, analyses: Dict[str, TemplateAnalysis]) -> str:
         """Generate comprehensive validation report"""
         total_templates = len(analyses)
-        valid_templates = sum(1 for a in analyses.values() if a.is_valid)
-        total_errors = sum(a.error_count for a in analyses.values())
-        total_warnings = sum(a.warning_count for a in analyses.values())
+        sum(1 for a in analyses.values() if a.is_valid)
+        sum(a.error_count for a in analyses.values())
+        sum(a.warning_count for a in analyses.values())
 
         # Count by Traefik compatibility
         traefik_counts = {
@@ -883,13 +883,13 @@ class TemplateValidator:
             traefik_counts[analysis.traefik_compatibility] += 1
 
         # Calculate average score
-        avg_score = (
+        _avg_score = (
             sum(a.score for a in analyses.values()) / total_templates
             if total_templates > 0
             else 0
         )
 
-        report = f"""
+        report = """
 # BlastDock Template Validation Report
 
 ## Summary

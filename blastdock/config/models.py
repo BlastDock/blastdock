@@ -3,7 +3,7 @@ Enhanced configuration models with comprehensive validation
 """
 
 import os
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
 

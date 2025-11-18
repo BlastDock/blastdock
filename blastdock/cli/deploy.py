@@ -3,29 +3,25 @@ Deploy command implementation for BlastDock CLI
 Handles project deployment using templates
 """
 
-import os
 import sys
 import time
-import tempfile
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 
 import click
 import yaml
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..core.config import get_config_manager
 from ..performance.template_registry import get_template_registry
-from ..performance.traefik_enhancer import get_traefik_enhancer, SecurityLevel
+from ..performance.traefik_enhancer import get_traefik_enhancer
 from ..utils.docker_utils import EnhancedDockerClient
 from ..utils.template_validator import TemplateValidator
 from ..utils.logging import get_logger
 from ..exceptions import DeploymentError, TemplateNotFoundError
-from ..models.project import ProjectConfig
 
 logger = get_logger(__name__)
 console = Console()
@@ -442,7 +438,6 @@ class DeploymentManager:
 @click.group(name="deploy")
 def deploy_group():
     """Deployment management commands"""
-    pass
 
 
 @deploy_group.command("create")
@@ -618,7 +613,7 @@ def deployment_status(project_name):
 
 @deploy_group.command("remove")
 @click.argument("project_name")
-@click.option("--force", "-f", is_flag=True, help="Force removal without confirmation")
+@click.option("--force", "-", is_flag=True, help="Force removal without confirmation")
 @click.option("--keep-volumes", is_flag=True, help="Keep data volumes")
 def remove_deployment(project_name, force, keep_volumes):
     """Remove a deployed project"""
@@ -664,11 +659,11 @@ def remove_deployment(project_name, force, keep_volumes):
                     import shutil
 
                     shutil.rmtree(project_dir)
-                    console.print(f"[green]✓ Project files removed[/green]")
+                    console.print("[green]✓ Project files removed[/green]")
             else:
                 console.print(f"[red]Failed to remove project: {result.stderr}[/red]")
         else:
-            console.print(f"[yellow]Project directory not found[/yellow]")
+            console.print("[yellow]Project directory not found[/yellow]")
 
     except Exception as e:
         console.print(f"[red]Error removing project: {e}[/red]")
@@ -676,7 +671,7 @@ def remove_deployment(project_name, force, keep_volumes):
 
 @deploy_group.command("logs")
 @click.argument("project_name")
-@click.option("--follow", "-f", is_flag=True, help="Follow log output")
+@click.option("--follow", "-", is_flag=True, help="Follow log output")
 @click.option("--tail", type=int, default=50, help="Number of lines to show")
 @click.option("--service", help="Show logs for specific service")
 def deployment_logs(project_name, follow, tail, service):
@@ -702,7 +697,7 @@ def deployment_logs(project_name, follow, tail, service):
         cmd = ["docker-compose", "-p", project_name, "logs"]
 
         if follow:
-            cmd.append("-f")
+            cmd.append("-")
 
         if tail:
             cmd.extend(["--tail", str(tail)])

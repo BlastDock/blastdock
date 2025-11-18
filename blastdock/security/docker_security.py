@@ -4,12 +4,10 @@ Docker security validation and checking for BlastDock
 
 import subprocess
 import json
-import re
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Any
 from datetime import datetime
 
 from ..utils.logging import get_logger
-from ..exceptions import SecurityError, DockerError
 
 
 logger = get_logger(__name__)

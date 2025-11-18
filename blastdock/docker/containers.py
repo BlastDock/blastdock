@@ -4,8 +4,7 @@ Enhanced Docker container management with comprehensive error handling
 
 import json
 import time
-from typing import Dict, List, Optional, Any, Union
-from datetime import datetime
+from typing import Dict, List, Optional, Any
 
 from ..utils.logging import get_logger
 from .client import get_docker_client
@@ -80,9 +79,9 @@ class ContainerManager:
 
             return extracted_info
 
-        except Exception as e:
+        except Exception:
             raise ContainerError(
-                f"Failed to get container information", container_id=container_id
+                "Failed to get container information", container_id=container_id
             )
 
     def start_container(self, container_id: str) -> Dict[str, Any]:
@@ -137,7 +136,7 @@ class ContainerManager:
             start_result["start_time"] = time.time() - start_time
             start_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to start container", container_id=container_id
+                "Failed to start container", container_id=container_id
             )
 
     def stop_container(self, container_id: str, timeout: int = 10) -> Dict[str, Any]:
@@ -176,7 +175,7 @@ class ContainerManager:
         except Exception as e:
             stop_result["stop_time"] = time.time() - start_time
             stop_result["errors"].append(str(e))
-            raise ContainerError(f"Failed to stop container", container_id=container_id)
+            raise ContainerError("Failed to stop container", container_id=container_id)
 
     def remove_container(
         self, container_id: str, force: bool = False, remove_volumes: bool = False
@@ -193,17 +192,16 @@ class ContainerManager:
             # Get container info before removal
             try:
                 container_info = self.get_container_info(container_id)
-                container_name = container_info.get("name", container_id)
+                container_info.get("name", container_id)
             except Exception as e:
                 self.logger.debug(
                     f"Could not get container info for {container_id}: {e}"
                 )
-                container_name = container_id
 
             cmd = ["docker", "rm"]
 
             if force:
-                cmd.append("-f")
+                cmd.append("-")
 
             if remove_volumes:
                 cmd.append("-v")
@@ -225,7 +223,7 @@ class ContainerManager:
         except Exception as e:
             remove_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to remove container", container_id=container_id
+                "Failed to remove container", container_id=container_id
             )
 
     def restart_container(self, container_id: str, timeout: int = 10) -> Dict[str, Any]:
@@ -282,7 +280,7 @@ class ContainerManager:
             restart_result["restart_time"] = time.time() - start_time
             restart_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to restart container", container_id=container_id
+                "Failed to restart container", container_id=container_id
             )
 
     def get_container_logs(
@@ -310,9 +308,9 @@ class ContainerManager:
             result = self.docker_client.execute_command(cmd)
             return result.stdout
 
-        except Exception as e:
+        except Exception:
             raise ContainerError(
-                f"Failed to get container logs", container_id=container_id
+                "Failed to get container logs", container_id=container_id
             )
 
     def execute_command_in_container(
@@ -370,7 +368,7 @@ class ContainerManager:
         except Exception as e:
             exec_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to execute command in container", container_id=container_id
+                "Failed to execute command in container", container_id=container_id
             )
 
     def copy_to_container(
@@ -396,7 +394,7 @@ class ContainerManager:
         except Exception as e:
             copy_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to copy files to container", container_id=container_id
+                "Failed to copy files to container", container_id=container_id
             )
 
     def copy_from_container(
@@ -422,7 +420,7 @@ class ContainerManager:
         except Exception as e:
             copy_result["errors"].append(str(e))
             raise ContainerError(
-                f"Failed to copy files from container", container_id=container_id
+                "Failed to copy files from container", container_id=container_id
             )
 
     def get_container_stats(
@@ -455,9 +453,9 @@ class ContainerManager:
                     "pids": stats.get("PIDs", "0"),
                 }
 
-        except Exception as e:
+        except Exception:
             raise ContainerError(
-                f"Failed to get container stats", container_id=container_id
+                "Failed to get container stats", container_id=container_id
             )
 
     def create_container(
@@ -522,7 +520,7 @@ class ContainerManager:
 
         except Exception as e:
             create_result["errors"].append(str(e))
-            raise ContainerError(f"Failed to create container", container_name=name)
+            raise ContainerError("Failed to create container", container_name=name)
 
     def prune_containers(
         self, filters: Optional[Dict[str, str]] = None
@@ -536,7 +534,7 @@ class ContainerManager:
         }
 
         try:
-            cmd = ["docker", "container", "prune", "-f"]
+            cmd = ["docker", "container", "prune", "-"]
 
             # Add filters
             if filters:

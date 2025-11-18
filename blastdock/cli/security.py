@@ -7,7 +7,6 @@ import json
 import os
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 from rich.tree import Tree
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -27,7 +26,6 @@ console = Console()
 @click.group()
 def security():
     """Security validation and management commands"""
-    pass
 
 
 @security.command()
@@ -45,7 +43,7 @@ def scan(project, save_report, output_format):
 
     console.print("\\n[bold blue]🔒 BlastDock Security Scan[/bold blue]\\n")
 
-    security_validator = get_security_validator()
+    get_security_validator()
     docker_checker = get_docker_security_checker()
     template_scanner = get_template_security_scanner()
 
@@ -476,7 +474,7 @@ def _display_file_scan_results(result: dict, fix_issues: bool):
     insecure_files = result.get("insecure_files", [])
 
     # Summary
-    console.print(f"[bold]📊 Scan Summary:[/bold]")
+    console.print("[bold]📊 Scan Summary:[/bold]")
     console.print(f"  • Files: {file_count}")
     console.print(f"  • Directories: {dir_count}")
     console.print(f"  • Total Size: {total_size / 1024:.1f} KB")

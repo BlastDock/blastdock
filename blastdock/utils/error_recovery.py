@@ -324,7 +324,7 @@ class ErrorRecoveryEngine:
             if cache_type in ["all", "docker"]:
                 # Clear Docker cache
                 subprocess.run(
-                    ["docker", "system", "prune", "-f"],
+                    ["docker", "system", "prune", "-"],
                     capture_output=True,
                     timeout=step.timeout,
                 )
