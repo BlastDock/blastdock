@@ -123,7 +123,8 @@ def scan_template(template_path, detailed):
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Scanning template...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Scanning template...", total=None)  # noqa: F841
         result = scanner.scan_template(template_path)
 
     if not result.get("accessible"):
@@ -151,7 +152,8 @@ def scan_container(container_name):
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Scanning container...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Scanning container...", total=None)  # noqa: F841
         result = checker.check_container_security(container_name)
 
     if not result.get("accessible"):
@@ -180,7 +182,8 @@ def scan_files(directory_path, fix):
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Scanning files...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Scanning files...", total=None)  # noqa: F841
         result = file_ops.scan_directory_security(directory_path)
 
     if not result.get("exists"):

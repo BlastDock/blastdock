@@ -70,7 +70,9 @@ class DockerClient:
 
             except subprocess.TimeoutExpired as e:
                 if attempt == self.max_retries - 1:
-                    self.logger.error(f"Command timed out after {timeout}s: {safe_cmd}")
+                    self.logger.error(
+                        f"Command timed out after {timeout}s: {safe_cmd}. Error: {e}"
+                    )
                     raise DockerError(
                         f"Docker command timed out after {timeout} seconds",
                         f"Command: {safe_cmd}",

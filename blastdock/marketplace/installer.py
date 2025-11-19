@@ -127,7 +127,10 @@ class TemplateInstaller:
             installed_version = self.get_installed_version(marketplace_template.name)
             return {
                 "success": False,
-                "error": f"Template '{marketplace_template.name}' already installed (v{installed_version}). Use --force to reinstall.",
+                "error": (
+                    f"Template '{marketplace_template.name}' already installed "
+                    f"(v{installed_version}). Use --force to reinstall."
+                ),
             }
 
         # Download template package

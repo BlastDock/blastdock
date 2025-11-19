@@ -133,7 +133,10 @@ class AlertManager:
                 duration_seconds=300,
                 annotations={
                     "summary": "High CPU usage detected",
-                    "description": "Container {{ $labels.container }} in project {{ $labels.project }} has high CPU usage ({{ $value }}%)",
+                    "description": (
+                        "Container {{ $labels.container }} in project {{ $labels.project }} "
+                        "has high CPU usage ({{ $value }}%)"
+                    ),
                 },
             ),
             AlertRule(
@@ -146,7 +149,10 @@ class AlertManager:
                 duration_seconds=180,
                 annotations={
                     "summary": "Critical CPU usage detected",
-                    "description": "Container {{ $labels.container }} in project {{ $labels.project }} has critical CPU usage ({{ $value }}%)",
+                    "description": (
+                        "Container {{ $labels.container }} in project {{ $labels.project }} "
+                        "has critical CPU usage ({{ $value }}%)"
+                    ),
                 },
             ),
             AlertRule(
@@ -159,7 +165,10 @@ class AlertManager:
                 duration_seconds=300,
                 annotations={
                     "summary": "High memory usage detected",
-                    "description": "Container {{ $labels.container }} in project {{ $labels.project }} has high memory usage ({{ $value }}%)",
+                    "description": (
+                        "Container {{ $labels.container }} in project {{ $labels.project }} "
+                        "has high memory usage ({{ $value }}%)"
+                    ),
                 },
             ),
             AlertRule(
@@ -185,7 +194,10 @@ class AlertManager:
                 duration_seconds=600,
                 annotations={
                     "summary": "Health checks failing",
-                    "description": "Service {{ $labels.service }} in project {{ $labels.project }} has low health check success rate ({{ $value }}%)",
+                    "description": (
+                        "Service {{ $labels.service }} in project {{ $labels.project }} "
+                        "has low health check success rate ({{ $value }}%)"
+                    ),
                 },
             ),
             AlertRule(

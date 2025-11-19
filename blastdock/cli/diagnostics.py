@@ -41,7 +41,8 @@ def check(verbose, save_report):
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Running diagnostics...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Running diagnostics...", total=None)  # noqa: F841
 
         # Run all diagnostic checks
         results = diagnostics_service.run_diagnostics()
@@ -143,7 +144,8 @@ def health(auto_fix, dry_run):
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Checking system health...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Checking system health...", total=None)  # noqa: F841
 
         # Run health checks
         health_results = diagnostics_service.run_diagnostics()
@@ -256,7 +258,8 @@ def info():
         console=console,
         transient=True,
     ) as progress:
-        task = progress.add_task("Checking components...", total=None)
+        # Task ID not needed for single-task progress display
+        _task = progress.add_task("Checking components...", total=None)  # noqa: F841
         component_results = diagnostics_service.run_diagnostics()
 
     _display_diagnostic_results(component_results, verbose=False)

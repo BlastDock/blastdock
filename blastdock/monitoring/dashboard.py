@@ -359,9 +359,10 @@ class MonitoringDashboard:
     def show_live_monitoring(self, project_name: str, refresh_interval: float = 5.0):
         """Show live monitoring dashboard with auto-refresh"""
         try:
+            # Live context manager handles display updates automatically
             with Live(
                 console=self.console, refresh_per_second=1 / refresh_interval
-            ) as _live:
+            ) as _live:  # noqa: F841
                 while True:
                     # Create fresh dashboard
                     self.show_project_overview(project_name)

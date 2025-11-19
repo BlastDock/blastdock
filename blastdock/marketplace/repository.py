@@ -225,8 +225,8 @@ class TemplateRepository:
                         with open(metadata_file, "r") as f:
                             metadata = yaml.safe_load(f) or {}
 
-                    # Package the template
-                    _package = self.package_template(
+                    # Package the template (result not used - packaged for side effect)
+                    _package = self.package_template(  # noqa: F841
                         template_dir, template_id, version, metadata
                     )
 

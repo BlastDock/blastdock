@@ -151,7 +151,8 @@ class ComposeManager:
             # Additional validations
             try:
                 # Test compose file syntax with docker-compose config
-                result = self.docker_client.execute_compose_command(
+                # Result not used - command executed for validation only
+                _result = self.docker_client.execute_compose_command(  # noqa: F841
                     ["config", "--quiet"],
                     compose_file=compose_file,
                     cwd=os.path.dirname(compose_file),

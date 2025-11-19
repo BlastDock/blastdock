@@ -424,7 +424,10 @@ class DockerHealthChecker:
                         continue
 
             # Check container health
-            running_containers = [c for c in containers if c.get("State") == "running"]
+            # Filter for running containers (reserved for future health checks)
+            _running_containers = [  # noqa: F841
+                c for c in containers if c.get("State") == "running"
+            ]
             summary["containers"] = [
                 {
                     "id": c.get("ID", "")[:12],
